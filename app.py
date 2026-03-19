@@ -226,7 +226,8 @@ def _startup():
     with app.app_context():
         init_db()
 
+_startup()
+
 if __name__=='__main__':
-    _startup()
     app.run(debug=True, host='0.0.0.0', port=5000,
             extra_files=[], exclude_patterns=['*.db','*.db-journal','.secret_key'])
