@@ -20,6 +20,7 @@ __pycache__/
 # Testing / Hypothesis
 .hypothesis/
 .pytest_cache/
+test_*.py
 
 # IDE / Editor
 .vscode/
