@@ -1,0 +1,30 @@
+{% extends "base.html" %}{% block title %}Match Calendar – {{ month_name }} {{ year }}{% endblock %}{% block css %}
+<style>
+.cal-nav{display:flex;align-items:center;justify-content:center;gap:1.5rem;margin-bottom:1.5rem}
+.cal-nav a{color:var(--t2);font-size:1.1rem;padding:.4rem .7rem;border-radius:8px;transition:all .2s}
+.cal-nav a:hover{color:var(--acc);background:var(--accs)}
+.cal-nav h2{font-size:1.4rem;font-weight:700;min-width:220px;text-align:center}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--bdr);border:1px solid var(--bdr);border-radius:12px;overflow:hidden}
+.cal-hdr{background:var(--bg3);padding:.5rem;text-align:center;font-size:.75rem;font-weight:600;text-transform:uppercase;color:var(--tm)}
+.cal-cell{background:var(--bgc);min-height:90px;padding:.4rem;vertical-align:top;position:relative}
+.cal-cell.empty{background:var(--bg2)}
+.cal-day{font-size:.78rem;font-weight:600;color:var(--t2);margin-bottom:.3rem}
+.cal-match{display:block;padding:.2rem .35rem;margin-bottom:.2rem;border-radius:5px;font-size:.68rem;line-height:1.3;background:var(--bg3);color:var(--t1);text-decoration:none;transition:all .15s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal-match:hover{background:var(--accs);color:var(--acc)}
+.cal-match.mine{background:var(--accs);color:var(--acc);font-weight:600}
+</style>{% endblock %}{% block body %}
+<div class="ph"><div><h2 class="pt"><i class="fas fa-calendar-alt"></i> Match Calendar</h2><p class="ps">Scheduled matches overview</p></div></div>
+<div class="cal-nav">
+<a href="{{ url_for('social.match_calendar', year=prev_year, month=prev_month) }}" title="Previous month"><i class="fas fa-chevron-left"></i></a>
+<h2>{{ month_name }} {{ year }}</h2>
+<a href="{{ url_for('social.match_calendar', year=next_year, month=next_month) }}" title="Next month"><i class="fas fa-chevron-right"></i></a>
+</div>
+<div class="cal-grid">
+<div class="cal-hdr">Mon</div><div class="cal-hdr">Tue</div><div class="cal-hdr">Wed</div><div class="cal-hdr">Thu</div><div class="cal-hdr">Fri</div><div class="cal-hdr">Sat</div><div class="cal-hdr">Sun</div>
+{% for week in month_grid %}{% for day in week %}{% if day == 0 %}<div class="cal-cell empty"></div>{% else %}<div class="cal-cell">
+<div class="cal-day">{{ day }}</div>
+{% for m in matches_by_day.get(day, []) %}<a class="cal-match{% if current_user.is_authenticated and current_user.id in [m.p1_id, m.p2_id] %} mine{% endif %}" href="{{ url_for('matches.match_view', mid=m.id) }}" title="{{ m.p1.name() }} vs {{ m.p2.name() }}">{{ m.p1.name() }} vs {{ m.p2.name() }}</a>
+{% endfor %}
+</div>{% endif %}{% endfor %}{% endfor %}
+</div>
+{% endblock %}

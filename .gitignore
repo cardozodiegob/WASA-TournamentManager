@@ -1,0 +1,35 @@
+# Database
+*.db
+*.db-journal
+
+# Secrets
+.secret_key
+.env
+
+# User uploads (environment-specific)
+static/uploads/
+
+# Backups
+backups/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Testing / Hypothesis
+.hypothesis/
+.pytest_cache/
+
+# IDE / Editor
+.vscode/
+.kiro/
+
+# Logs
+*.log
+build.log
+
+# Archives
+*.7z
+*.zip
+*.rar

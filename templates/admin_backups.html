@@ -1,0 +1,26 @@
+{% extends "base.html" %}{% block title %}Database Backups{% endblock %}{% block body %}
+<div class="ph"><div><h2 class="pt"><i class="fas fa-database"></i> Database Backups</h2><p class="ps">Create, restore, and manage database backups ({{ backups|length }}/20)</p></div></div>
+
+<div style="margin-bottom:1.5rem">
+<form method="POST" action="{{ url_for('admin.adm_backup_create') }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="btn btn-p"><i class="fas fa-plus"></i> Create Backup</button></form>
+<a href="{{ url_for('admin.adm') }}" class="btn btn-s" style="margin-left:.5rem"><i class="fas fa-arrow-left"></i> Back to Admin</a>
+</div>
+
+{% if backups %}
+<div class="card">
+<table class="dt"><thead><tr><th>Filename</th><th>Date</th><th>Size</th><th>Actions</th></tr></thead><tbody>
+{% for b in backups %}<tr>
+<td style="font-family:monospace;font-size:.85rem">{{ b.filename }}</td>
+<td>{{ b.created_at.strftime('%b %d, %Y %H:%M:%S') }}</td>
+<td>{% if b.size_bytes >= 1048576 %}{{ '%.1f'|format(b.size_bytes / 1048576) }} MB{% else %}{{ '%.1f'|format(b.size_bytes / 1024) }} KB{% endif %}</td>
+<td style="display:flex;gap:.4rem">
+<form method="POST" action="{{ url_for('admin.adm_backup_restore', filename=b.filename) }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="btn btn-p btn-sm" onclick="return confirm('Are you sure? This will replace the current database. A pre-rollback backup will be created.')"><i class="fas fa-undo"></i> Restore</button></form>
+<form method="POST" action="{{ url_for('admin.adm_backup_delete', filename=b.filename) }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="btn btn-w btn-sm" onclick="return confirm('Delete this backup?')"><i class="fas fa-trash"></i> Delete</button></form>
+</td>
+</tr>{% endfor %}
+</tbody></table>
+</div>
+{% else %}
+<div class="card" style="padding:2rem;text-align:center;color:var(--t2)"><i class="fas fa-inbox" style="font-size:2rem;margin-bottom:.75rem;display:block"></i>No backups yet. Click "Create Backup" to get started.</div>
+{% endif %}
+{% endblock %}

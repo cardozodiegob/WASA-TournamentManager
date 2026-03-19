@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="{{ g.theme }}">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>{% block title %}WASA Tournaments{% endblock %}</title>
+{% block meta %}{% endblock %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="icon" href="/favicon.png" type="image/png">
+
+
+<style>
+:root{--bg1:#0f0f13;--bg2:#1a1a24;--bg3:#242435;--bgc:#1e1e2e;--bgh:#2a2a3d;--t1:#e8e8f0;--t2:#a0a0b8;--tm:#6b6b80;--bdr:#2d2d42;--acc:#6c5ce7;--acch:#7f71ed;--accs:rgba(108,92,231,.15);--ok:#00b894;--warn:#fdcb6e;--err:#e17055;--info:#74b9ff;--ai-bg:rgba(116,185,255,.12);--ai-bdr:rgba(116,185,255,.4);--ai-t:#74b9ff;--as-bg:rgba(0,184,148,.12);--as-bdr:rgba(0,184,148,.4);--as-t:#00b894;--aw-bg:rgba(253,203,110,.12);--aw-bdr:rgba(253,203,110,.4);--aw-t:#fdcb6e;--ae-bg:rgba(225,112,85,.12);--ae-bdr:rgba(225,112,85,.4);--ae-t:#e17055}
+[data-theme="light"]{--bg1:#f5f5fa;--bg2:#fff;--bg3:#eeeef4;--bgc:#fff;--bgh:#e8e8f0;--t1:#1a1a2e;--t2:#4a4a60;--tm:#8888a0;--bdr:#d0d0de;--accs:rgba(108,92,231,.1);--ai-bg:rgba(30,100,200,.08);--ai-bdr:rgba(30,100,200,.35);--ai-t:#1e64c8;--as-bg:rgba(0,140,110,.08);--as-bdr:rgba(0,140,110,.35);--as-t:#008c6e;--aw-bg:rgba(200,160,30,.1);--aw-bdr:rgba(200,160,30,.35);--aw-t:#9a7b00;--ae-bg:rgba(200,60,40,.08);--ae-bdr:rgba(200,60,40,.35);--ae-t:#c83c28}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}body{font-family:'Inter',sans-serif;background:var(--bg1);color:var(--t1);line-height:1.6;min-height:100vh;position:relative}body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.06;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");background-repeat:repeat;background-size:256px 256px;mix-blend-mode:luminosity;background-color:var(--acc)}.nb,.mc,.flc,.ab{position:relative;z-index:1}
+
+
+a{color:var(--acc);text-decoration:none}a:hover{color:var(--acch)}
+.nb{background:var(--bg2);border-bottom:1px solid var(--bdr);padding:0 2rem;height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:1000}
+.nb-brand{font-size:1.3rem;font-weight:800;color:var(--acc);display:flex;align-items:center;gap:.5rem}
+.nl{display:flex;align-items:center;gap:.25rem}
+.nk{color:var(--t2);padding:.5rem .7rem;border-radius:8px;font-size:.88rem;font-weight:500;display:flex;align-items:center;gap:.4rem;transition:all .2s;position:relative}
+.nk:hover,.nk.on{color:var(--t1);background:var(--accs)}
+.nk:hover i{transform:scale(1.25)}.nk i{transition:transform .15s}
+.nk .lbl{position:absolute;left:50%;top:100%;transform:translateX(-50%);background:var(--bg2);color:var(--t1);border:1px solid var(--bdr);border-radius:6px;padding:.25rem .5rem;font-size:.75rem;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s;z-index:1002;box-shadow:0 4px 12px rgba(0,0,0,.25);margin-top:2px}
+.nk:hover .lbl{opacity:1}
+.dd .nk .lbl{position:static;transform:none;background:none;border:none;padding:0;margin:0;box-shadow:none;opacity:1;pointer-events:auto;font-size:.88rem;white-space:nowrap}
+.nav-av{width:34px;height:34px;border-radius:50%;object-fit:cover;border:2px solid var(--acc)}
+.dd{position:relative}.ddc{display:none;position:absolute;right:0;top:100%;background:var(--bgc);border:1px solid var(--bdr);border-radius:12px;min-width:220px;padding:.5rem;box-shadow:0 8px 32px rgba(0,0,0,.3);z-index:1001}
+.dd:hover .ddc,.dd:focus-within .ddc{display:block}
+.ddi{display:flex;align-items:center;gap:.6rem;padding:.6rem .8rem;border-radius:8px;color:var(--t2);font-size:.88rem;transition:all .2s}
+.ddi:hover{background:var(--bgh);color:var(--t1)}.ddi.x{color:var(--err)}
+.ddd{height:1px;background:var(--bdr);margin:.35rem 0}
+.flc{padding:.75rem 2rem;display:flex;flex-direction:column;gap:.5rem}
+.fl-msg{padding:.8rem 1.2rem;border-radius:10px;font-size:.9rem;display:flex;align-items:center;gap:.6rem;border:1px solid var(--bdr);background:var(--bg2);color:var(--t1);transition:opacity .3s}
+.fl-i{background:var(--ai-bg);border-color:var(--ai-bdr);color:var(--ai-t)}
+.fl-s{background:var(--as-bg);border-color:var(--as-bdr);color:var(--as-t)}
+.fl-w{background:var(--aw-bg);border-color:var(--aw-bdr);color:var(--aw-t)}
+.fl-d{background:var(--ae-bg);border-color:var(--ae-bdr);color:var(--ae-t)}
+.fl-x{margin-left:auto;background:none;border:none;color:inherit;cursor:pointer;font-size:1.1rem;opacity:.6}.fl-x:hover{opacity:1}
+.ab{padding:.4rem 2rem;display:flex;flex-direction:column;gap:.3rem;background:var(--bg1)}
+.ab-item{display:flex;align-items:center;gap:.6rem;padding:.55rem 1rem;border-radius:8px;font-size:.85rem;font-weight:500;text-decoration:none;transition:all .2s;cursor:pointer}
+.ab-item:hover{filter:brightness(1.2);transform:translateX(2px)}
+.ab-i{background:var(--ai-bg);border:1px solid var(--ai-bdr);color:var(--ai-t)}
+.ab-s{background:var(--as-bg);border:1px solid var(--as-bdr);color:var(--as-t)}
+.ab-w{background:var(--aw-bg);border:1px solid var(--aw-bdr);color:var(--aw-t)}
+.ab-d{background:var(--ae-bg);border:1px solid var(--ae-bdr);color:var(--ae-t)}
+.mc{max-width:1200px;margin:0 auto;padding:2rem}
+.ph{margin-bottom:2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem}
+.pt{font-size:1.8rem;font-weight:800}.ps{color:var(--t2);font-size:.95rem;margin-top:.25rem}
+.card{background:var(--bgc);border:1px solid var(--bdr);border-radius:16px;padding:1.5rem;transition:all .25s}
+.card:hover{border-color:var(--acc);box-shadow:0 4px 24px rgba(108,92,231,.08)}
+.cg{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.25rem}
+.ct{font-size:1.15rem;font-weight:700;margin-bottom:.5rem}.cm{color:var(--tm);font-size:.82rem;margin-bottom:.75rem}
+.ncl{display:block;text-decoration:none;color:inherit;border-radius:16px;transition:transform .2s,box-shadow .2s}
+.ncl:hover{transform:translateY(-3px);box-shadow:0 8px 30px rgba(108,92,231,.12);color:inherit}.ncl:hover .card{border-color:var(--acc)}
+.ni{width:100%;height:180px;object-fit:cover;border-radius:10px;margin-bottom:.75rem}
+.nc{display:inline-block;padding:.2rem .6rem;border-radius:6px;font-size:.72rem;font-weight:600;text-transform:uppercase;background:var(--accs);color:var(--acc);margin-bottom:.5rem}
+.ns{color:var(--t2);font-size:.88rem;line-height:1.5;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.dt{width:100%;border-collapse:separate;border-spacing:0}
+.dt th{background:var(--bg3);padding:.75rem 1rem;text-align:left;font-size:.8rem;font-weight:600;text-transform:uppercase;color:var(--tm);border-bottom:1px solid var(--bdr)}
+.dt th:first-child{border-radius:10px 0 0 0}.dt th:last-child{border-radius:0 10px 0 0}
+.dt td{padding:.75rem 1rem;border-bottom:1px solid var(--bdr);font-size:.9rem}.dt tr:hover td{background:var(--bgh)}
+.b{display:inline-flex;align-items:center;gap:.3rem;padding:.2rem .65rem;border-radius:6px;font-size:.75rem;font-weight:600}
+.b-a{background:var(--accs);color:var(--acc)}.b-s{background:rgba(0,184,148,.15);color:var(--ok)}
+.b-w{background:rgba(253,203,110,.15);color:var(--warn)}.b-d{background:rgba(225,112,85,.15);color:var(--err)}
+.b-i{background:rgba(116,185,255,.15);color:var(--info)}.b-ad{background:rgba(225,112,85,.18);color:#ff6b6b}
+.b-m{background:var(--bg3);color:var(--tm)}.b-r{font-weight:700}.b-u{background:rgba(136,136,136,.15);color:#888;font-style:italic}
+.fg{margin-bottom:1.25rem}.fl{display:block;margin-bottom:.4rem;font-size:.88rem;font-weight:600;color:var(--t2)}
+.fi,.fs,.ft{width:100%;padding:.7rem 1rem;background:var(--bg3);border:1px solid var(--bdr);border-radius:10px;color:var(--t1);font-size:.92rem;font-family:inherit;transition:border-color .2s}
+.fi:focus,.fs:focus,.ft:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px var(--accs)}.ft{min-height:120px;resize:vertical}
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.65rem 1.3rem;border-radius:10px;font-size:.9rem;font-weight:600;font-family:inherit;cursor:pointer;transition:all .2s;border:1px solid transparent;text-decoration:none}
+.btn-p{background:var(--acc);color:#fff;border-color:var(--acc)}.btn-p:hover{background:var(--acch);color:#fff}
+.btn-s{background:var(--bg3);color:var(--t1);border-color:var(--bdr)}.btn-s:hover{background:var(--bgh);color:var(--t1)}
+.btn-d{background:var(--err);color:#fff}.btn-d:hover{opacity:.9;color:#fff}
+.btn-ok{background:var(--ok);color:#fff}.btn-ok:hover{opacity:.9;color:#fff}
+.btn-w{background:var(--warn);color:#1a1a2e}.btn-w:hover{opacity:.9;color:#1a1a2e}
+.btn-sm{padding:.4rem .8rem;font-size:.82rem}.btn-bl{width:100%;justify-content:center}
+.sr{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:2rem}
+.sc{background:var(--bgc);border:1px solid var(--bdr);border-radius:14px;padding:1.25rem;text-align:center}
+.sv{font-size:2rem;font-weight:800;color:var(--acc)}.sl{font-size:.82rem;color:var(--tm);text-transform:uppercase;margin-top:.2rem}
+.prh{display:flex;align-items:center;gap:2rem;margin-bottom:2rem;flex-wrap:wrap}
+.pra{width:120px;height:120px;border-radius:50%;object-fit:cover;border:3px solid var(--acc)}
+.pri{flex:1;min-width:200px}.prn{font-size:1.6rem;font-weight:800}.prb{color:var(--t2);margin-top:.5rem}
+.prs{display:flex;gap:1.5rem;margin-top:.75rem;flex-wrap:wrap}
+.prsl{color:var(--tm);font-size:.8rem}.prsv{font-weight:700}
+.crop-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:5000;align-items:center;justify-content:center}.crop-ov.on{display:flex}
+.crop-m{background:var(--bgc);border:1px solid var(--bdr);border-radius:20px;padding:2rem;max-width:500px;width:90%;text-align:center}
+.crop-m h3{margin-bottom:1rem;font-weight:700}
+.crop-c{position:relative;width:280px;height:280px;margin:0 auto 1rem;border-radius:50%;overflow:hidden;border:3px solid var(--acc);background:var(--bg3);cursor:grab;touch-action:none}
+.crop-c:active{cursor:grabbing}.crop-c img{position:absolute;top:0;left:0;user-select:none;pointer-events:none}
+.crop-sl{width:80%;margin:.75rem auto;display:block;accent-color:var(--acc)}
+.crop-a{display:flex;gap:.75rem;justify-content:center;margin-top:1rem}
+.rd{display:inline-flex;align-items:center;gap:.4rem}.rd .pl{font-size:.72rem;color:var(--tm);font-style:italic}
+.tc{text-align:center}.muted{color:var(--tm)}.empty{text-align:center;padding:4rem 2rem;color:var(--tm)}.empty i{font-size:3rem;margin-bottom:1rem;display:block}
+.tabs{display:flex;gap:.25rem;margin-bottom:1.5rem;border-bottom:1px solid var(--bdr);padding-bottom:.5rem}
+.tab{padding:.5rem 1rem;border-radius:8px 8px 0 0;font-size:.88rem;font-weight:600;color:var(--tm);transition:all .2s;border:none;background:none;text-decoration:none}.tab:hover,.tab.on{color:var(--acc);background:var(--accs)}
+.ag{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:1rem}
+.acard{text-align:center;padding:1rem;background:var(--bg3);border-radius:12px;border:1px solid var(--bdr);transition:all .2s}.acard:hover{border-color:var(--acc)}
+.acard img{width:64px;height:64px;border-radius:8px;object-fit:cover;margin-bottom:.5rem}.acard .atitle{font-size:.8rem;font-weight:600}
+.fbar{display:flex;flex-wrap:wrap;gap:.5rem;align-items:end}
+.fbar .fg{margin-bottom:0;flex:1;min-width:140px}
+.fbar .fi,.fbar .fs{padding:.5rem .75rem;font-size:.85rem}
+.bracket{overflow-x:auto;padding:1rem 0}.bracket-round{display:inline-flex;flex-direction:column;justify-content:center;gap:.5rem;vertical-align:top;min-width:240px;margin-right:1.5rem}
+.bracket-round h4{text-align:center;color:var(--tm);font-size:.8rem;text-transform:uppercase;margin-bottom:.5rem}
+.bm{background:var(--bg3);border:1px solid var(--bdr);border-radius:10px;padding:.6rem .8rem;font-size:.82rem;transition:all .2s}.bm:hover{border-color:var(--acc)}.bm.bm-active{border-color:var(--warn);background:var(--aw-bg)}.bm.bm-done{border-color:var(--ok)}.bm.bm-bye{opacity:.5}
+.bm-players{display:flex;flex-direction:column;gap:.25rem}.bm-p{display:flex;justify-content:space-between;align-items:center;gap:.5rem}.bm-p.bm-winner{font-weight:700;color:var(--ok)}.bm-p.bm-loser{opacity:.5}.bm-score{font-weight:700;min-width:20px;text-align:right}.bm-status{font-size:.7rem;color:var(--tm);margin-top:.3rem;text-align:center}
+@media(max-width:768px){.nb{padding:0 1rem}.mc{padding:1rem}.pt{font-size:1.4rem}.cg{grid-template-columns:1fr}.sr{grid-template-columns:repeat(2,1fr)}.prh{flex-direction:column;text-align:center}.prs{justify-content:center}.fbar{flex-direction:column}.fbar .fg{min-width:100%}.home-split{grid-template-columns:1fr !important}}
+/* Sidebar Navigation */
+.sb{position:fixed;top:0;left:0;height:100vh;width:240px;background:var(--bg2);border-right:1px solid var(--bdr);display:flex;flex-direction:column;z-index:1000;transition:width .25s ease}
+.sb.collapsed{width:60px}
+.sb-brand{padding:1rem;display:flex;align-items:center;gap:.5rem;font-size:1.2rem;font-weight:800;color:var(--acc);text-decoration:none;border-bottom:1px solid var(--bdr);min-height:64px;overflow:hidden;white-space:nowrap}
+.sb.collapsed .sb-brand .sb-brand-text{display:none}
+.sb-nav{flex:1;overflow-y:auto;overflow-x:hidden;padding:.5rem}
+.sb-link{display:flex;align-items:center;gap:.6rem;padding:.55rem .75rem;border-radius:8px;color:var(--t2);font-size:.85rem;font-weight:500;text-decoration:none;transition:all .2s;white-space:nowrap;overflow:hidden}
+.sb-link:hover,.sb-link.on{color:var(--t1);background:var(--accs)}
+.sb-link i{min-width:20px;text-align:center;font-size:.95rem}
+.sb.collapsed .sb-link span{display:none}
+.sb-section{padding:.4rem .75rem;font-size:.7rem;font-weight:600;text-transform:uppercase;color:var(--tm);margin-top:.5rem;white-space:nowrap;overflow:hidden}
+.sb.collapsed .sb-section{text-align:center;font-size:0}
+.sb-bottom{border-top:1px solid var(--bdr);padding:.5rem;position:relative;overflow:visible}
+.sb-user{display:flex;align-items:center;gap:.6rem;padding:.55rem .75rem;border-radius:8px;color:var(--t2);font-size:.85rem;cursor:pointer;transition:all .2s;white-space:nowrap;overflow:hidden;position:relative}
+.sb-user:hover{background:var(--bgh);color:var(--t1)}
+.sb-user-av{width:30px;height:30px;border-radius:50%;object-fit:cover;border:2px solid var(--acc);flex-shrink:0}
+.sb.collapsed .sb-user span{display:none}
+.sb-user-menu{display:none;position:fixed;background:var(--bgc);border:1px solid var(--bdr);border-radius:12px;min-width:220px;padding:.5rem;box-shadow:0 8px 32px rgba(0,0,0,.3);z-index:2000}
+.sb-user-menu.open{display:block}
+.sb-toggle{display:flex;align-items:center;justify-content:center;padding:.5rem;cursor:pointer;color:var(--tm);transition:all .2s;border:none;background:none;width:100%;border-top:1px solid var(--bdr)}
+.sb-toggle:hover{color:var(--t1);background:var(--bgh)}
+.sb-main{margin-left:240px;transition:margin-left .25s ease}
+.sb-main.collapsed{margin-left:60px}
+/* Sidebar mobile top bar */
+.sb-mobile-bar{display:none;position:sticky;top:0;z-index:999;background:var(--bg2);border-bottom:1px solid var(--bdr);padding:0 1rem;height:50px;align-items:center;gap:.75rem}
+.sb-hamburger{background:none;border:none;color:var(--t1);font-size:1.3rem;cursor:pointer;padding:.25rem}
+.sb-mobile-brand{font-size:1.1rem;font-weight:800;color:var(--acc);text-decoration:none;display:flex;align-items:center;gap:.5rem}
+.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999}
+.sb-overlay.open{display:block}
+@media(max-width:768px){
+.sb{transform:translateX(-100%);width:240px !important;z-index:1001}
+.sb.mobile-open{transform:translateX(0)}
+.sb.collapsed{width:240px !important}
+.sb.collapsed .sb-link span,.sb.collapsed .sb-user span,.sb.collapsed .sb-brand .sb-brand-text,.sb.collapsed .sb-section{display:initial;font-size:inherit}
+.sb-main{margin-left:0 !important}
+.sb-mobile-bar{display:flex}
+.sb-toggle{display:none}
+}
+.fs-small{font-size:14px}.fs-medium{font-size:16px}.fs-large{font-size:18px}
+</style>{% block css %}{% endblock %}
+</head><body class="fs-{{ g.get('font_size', 'medium') }}">
+{% if g.get('navbar_position', 'top') == 'left' %}
+{# ===== SIDEBAR NAVIGATION ===== #}
+<div class="sb-overlay" id="sbOverlay" onclick="closeSidebar()"></div>
+<div class="sb-mobile-bar">
+<button class="sb-hamburger" onclick="toggleMobileSidebar()" aria-label="Toggle menu"><i class="fas fa-bars"></i></button>
+<a href="{{ url_for('main.home') }}" class="sb-mobile-brand"><i class="fas fa-trophy"></i> WASA</a>
+</div>
+<aside class="sb" id="sidebar">
+<a href="{{ url_for('main.home') }}" class="sb-brand"><i class="fas fa-trophy"></i> <span class="sb-brand-text">WASA</span></a>
+<nav class="sb-nav">
+<div class="sb-section">Navigate</div>
+<a href="{{ url_for('main.home') }}" class="sb-link {% if request.endpoint=='home' %}on{% endif %}"><i class="fas fa-home"></i><span>Home</span></a>
+<a href="{{ url_for('tournaments.tourneys') }}" class="sb-link {% if 'tourney' in (request.endpoint or '') %}on{% endif %}"><i class="fas fa-trophy"></i><span>Tournaments</span></a>
+<a href="{{ url_for('main.board') }}" class="sb-link {% if request.endpoint=='board' %}on{% endif %}"><i class="fas fa-ranking-star"></i><span>Leaderboard</span></a>
+<a href="{{ url_for('clans.clan_list') }}" class="sb-link {% if 'clan' in (request.endpoint or '') %}on{% endif %}"><i class="fas fa-shield-halved"></i><span>Clans</span></a>
+<a href="{{ url_for('main.news_list') }}" class="sb-link {% if 'news' in (request.endpoint or '') %}on{% endif %}"><i class="fas fa-newspaper"></i><span>News</span></a>
+<a href="{{ url_for('seasons_bp.seasons') }}" class="sb-link {% if 'season' in (request.endpoint or '') %}on{% endif %}"><i class="fas fa-calendar-alt"></i><span>Seasons</span></a>
+<a href="{{ url_for('matches.match_list') }}" class="sb-link {% if 'match' in (request.endpoint or '') %}on{% endif %}"><i class="fas fa-gamepad"></i><span>Matches</span></a>
+<a href="{{ url_for('main.find_players') }}" class="sb-link {% if request.endpoint=='find_players' %}on{% endif %}"><i class="fas fa-search"></i><span>Players</span></a>
+<a href="{{ url_for('main.activity_feed') }}" class="sb-link {% if request.endpoint=='activity_feed' %}on{% endif %}"><i class="fas fa-stream"></i><span>Activity</span></a>
+<a href="{{ url_for('main.compare_players') }}" class="sb-link {% if request.endpoint=='compare_players' %}on{% endif %}"><i class="fas fa-scale-balanced"></i><span>Compare</span></a>
+<a href="{{ url_for('main.hall_of_fame') }}" class="sb-link {% if request.endpoint=='hall_of_fame' %}on{% endif %}"><i class="fas fa-crown"></i><span>Fame</span></a>
+<a href="{{ url_for('economy.shop') }}" class="sb-link {% if request.endpoint=='shop' %}on{% endif %}"><i class="fas fa-store"></i><span>Shop</span></a>
+<a href="{{ url_for('social.prediction_leaderboard') }}" class="sb-link {% if request.endpoint=='prediction_leaderboard' %}on{% endif %}"><i class="fas fa-chart-line"></i><span>Predictions</span></a>
+<a href="{{ url_for('social.mvp_page') }}" class="sb-link {% if request.endpoint=='mvp_page' %}on{% endif %}"><i class="fas fa-star"></i><span>MVP</span></a>
+<a href="{{ url_for('social.match_calendar') }}" class="sb-link {% if request.endpoint=='match_calendar' %}on{% endif %}"><i class="fas fa-calendar-days"></i><span>Calendar</span></a>
+{% if current_user.is_authenticated %}
+<div class="sb-section">Account</div>
+<a href="{{ url_for('economy.inventory') }}" class="sb-link {% if request.endpoint=='inventory' %}on{% endif %}"><i class="fas fa-box-open"></i><span>Inventory</span></a>
+<a href="{{ url_for('economy.points_history') }}" class="sb-link {% if request.endpoint=='points_history' %}on{% endif %}"><i class="fas fa-coins"></i><span>Points</span></a>
+<a href="{{ url_for('economy.bet_history') }}" class="sb-link {% if request.endpoint=='bet_history' %}on{% endif %}"><i class="fas fa-dice"></i><span>Bets</span></a>
+<a href="{{ url_for('main.flip_theme') }}" class="sb-link"><i class="fas fa-{{ 'sun' if g.theme=='dark' else 'moon' }}"></i><span>Toggle Theme</span></a>
+{% if current_user.admin %}
+<div class="sb-section">Admin</div>
+<a href="{{ url_for('admin.adm') }}" class="sb-link {% if 'adm' in (request.endpoint or '') %}on{% endif %}"><i class="fas fa-shield-halved"></i><span>Admin Panel</span></a>
+<a href="{{ url_for('admin.adm_audit') }}" class="sb-link {% if request.endpoint=='adm_audit' %}on{% endif %}"><i class="fas fa-gavel"></i><span>Audit Log</span></a>
+{% endif %}
+{% endif %}
+</nav>
+<div class="sb-bottom">
+{% if current_user.is_authenticated %}
+<div style="padding:.4rem .75rem;color:var(--warn);font-size:.8rem;font-weight:600;white-space:nowrap;overflow:hidden"><i class="fas fa-coins"></i> <span>{{ current_user.points }} 🪙</span></div>
+<div class="sb-user" id="sbUser" onclick="toggleSbUserMenu(event)">
+{% if current_user.avatar %}<img src="{{ url_for('static',filename='uploads/'+current_user.avatar) }}" class="sb-user-av" alt="" loading="lazy">{% else %}<img src="{{ url_for('static',filename='placeholder_avatar.svg') }}" class="sb-user-av" alt="" loading="lazy">{% endif %}
+<span>{{ current_user.name() }}</span>
+<i class="fas fa-chevron-up" style="font-size:.6rem;margin-left:auto"></i>
+<div class="sb-user-menu" id="sbUserMenu">
+<div class="ddi" style="font-weight:700;color:var(--warn)"><i class="fas fa-coins"></i> {{ current_user.points }} PongCoins</div>
+<div class="ddd"></div>
+<a href="{{ url_for('main.prof',u=current_user.username) }}" class="ddi"><i class="fas fa-user"></i> Profile</a>
+<a href="{{ url_for('main.dash') }}" class="ddi"><i class="fas fa-table-columns"></i> Dashboard</a>
+<a href="{{ url_for('main.edit_prof') }}" class="ddi"><i class="fas fa-pen-to-square"></i> Edit Profile</a>
+<a href="{{ url_for('main.my_ch') }}" class="ddi"><i class="fas fa-gamepad"></i> Challenges</a>
+<a href="{{ url_for('clans.my_clan_invites') }}" class="ddi"><i class="fas fa-envelope"></i> Clan Invites</a>
+<a href="{{ url_for('main.my_alerts') }}" class="ddi"><i class="fas fa-bell"></i> Alerts
+{% set ur=current_user.alerts.filter_by(read=False).count() %}{% if ur %}<span class="b b-d" style="margin-left:auto">{{ ur }}</span>{% endif %}</a>
+<a href="{{ url_for('main.user_settings') }}" class="ddi"><i class="fas fa-gear"></i> Settings</a>
+<a href="{{ url_for('main.flip_theme') }}" class="ddi"><i class="fas fa-{{ 'sun' if g.theme=='dark' else 'moon' }}"></i> {{ 'Light Mode' if g.theme=='dark' else 'Dark Mode' }}</a>
+{% if current_user.admin %}<div class="ddd"></div>
+<a href="{{ url_for('admin.adm') }}" class="ddi"><i class="fas fa-gear"></i> Admin</a>
+<a href="{{ url_for('admin.adm_audit') }}" class="ddi"><i class="fas fa-gavel"></i> Audit</a>{% endif %}
+<div class="ddd"></div>
+<a href="{{ url_for('main.logout') }}" class="ddi x"><i class="fas fa-right-from-bracket"></i> Log Out</a>
+</div>
+</div>
+{% else %}
+<a href="{{ url_for('main.login') }}" class="sb-link"><i class="fas fa-sign-in-alt"></i><span>Login</span></a>
+<a href="{{ url_for('main.register') }}" class="sb-link" style="color:var(--acc);font-weight:600"><i class="fas fa-user-plus"></i><span>Sign Up</span></a>
+{% endif %}
+<button class="sb-toggle" id="sbToggle" onclick="toggleSidebar()" aria-label="Toggle sidebar"><i class="fas fa-angles-left" id="sbToggleIcon"></i></button>
+</div>
+</aside>
+<div class="sb-main" id="sbMain">
+{% else %}
+{# ===== TOP NAVBAR ===== #}
+<nav class="nb">
+<a href="{{ url_for('main.home') }}" class="nb-brand"><i class="fas fa-trophy"></i> WASA Tournaments</a>
+
+<div class="nl">
+<a href="{{ url_for('main.home') }}" class="nk {% if request.endpoint=='home' %}on{% endif %}"><i class="fas fa-home"></i><span class="lbl">Home</span></a>
+<a href="{{ url_for('tournaments.tourneys') }}" class="nk {% if 'tourney' in (request.endpoint or '') %}on{% endif %}"><i class="fas fa-trophy"></i><span class="lbl">Tournaments</span></a>
+<a href="{{ url_for('main.board') }}" class="nk {% if request.endpoint=='board' %}on{% endif %}"><i class="fas fa-ranking-star"></i><span class="lbl">Leaderboard</span></a>
+<a href="{{ url_for('clans.clan_list') }}" class="nk {% if 'clan' in (request.endpoint or '') %}on{% endif %}"><i class="fas fa-shield-halved"></i><span class="lbl">Clans</span></a>
+<a href="{{ url_for('main.news_list') }}" class="nk {% if 'news' in (request.endpoint or '') %}on{% endif %}"><i class="fas fa-newspaper"></i><span class="lbl">News</span></a>
+<a href="{{ url_for('seasons_bp.seasons') }}" class="nk {% if 'season' in (request.endpoint or '') %}on{% endif %}"><i class="fas fa-calendar-alt"></i><span class="lbl">Seasons</span></a>
+<a href="{{ url_for('matches.match_list') }}" class="nk {% if 'match' in (request.endpoint or '') %}on{% endif %}"><i class="fas fa-gamepad"></i><span class="lbl">Matches</span></a>
+<a href="{{ url_for('main.find_players') }}" class="nk {% if request.endpoint=='find_players' %}on{% endif %}"><i class="fas fa-search"></i><span class="lbl">Players</span></a>
+<a href="{{ url_for('main.activity_feed') }}" class="nk {% if request.endpoint=='activity_feed' %}on{% endif %}"><i class="fas fa-stream"></i><span class="lbl">Activity</span></a>
+<a href="{{ url_for('main.compare_players') }}" class="nk {% if request.endpoint=='compare_players' %}on{% endif %}"><i class="fas fa-scale-balanced"></i><span class="lbl">Compare</span></a>
+<a href="{{ url_for('main.hall_of_fame') }}" class="nk {% if request.endpoint=='hall_of_fame' %}on{% endif %}"><i class="fas fa-crown"></i><span class="lbl">Fame</span></a>
+<a href="{{ url_for('economy.shop') }}" class="nk {% if request.endpoint=='shop' %}on{% endif %}"><i class="fas fa-store"></i><span class="lbl">Shop</span></a>
+<a href="{{ url_for('social.prediction_leaderboard') }}" class="nk {% if request.endpoint=='prediction_leaderboard' %}on{% endif %}"><i class="fas fa-chart-line"></i><span class="lbl">Predictions</span></a>
+<a href="{{ url_for('social.mvp_page') }}" class="nk {% if request.endpoint=='mvp_page' %}on{% endif %}"><i class="fas fa-star"></i><span class="lbl">MVP</span></a>
+<a href="{{ url_for('social.match_calendar') }}" class="nk {% if request.endpoint=='match_calendar' %}on{% endif %}"><i class="fas fa-calendar-days"></i><span class="lbl">Calendar</span></a>
+
+{% if current_user.is_authenticated %}
+<a href="{{ url_for('economy.inventory') }}" class="nk {% if request.endpoint=='inventory' %}on{% endif %}"><i class="fas fa-box-open"></i><span class="lbl">Inventory</span></a>
+<a href="{{ url_for('economy.points_history') }}" class="nk {% if request.endpoint=='points_history' %}on{% endif %}"><i class="fas fa-coins"></i><span class="lbl">Points</span></a>
+<a href="{{ url_for('economy.bet_history') }}" class="nk {% if request.endpoint=='bet_history' %}on{% endif %}"><i class="fas fa-dice"></i><span class="lbl">Bets</span></a>
+<span class="nk" style="color:var(--warn);cursor:default"><i class="fas fa-coins"></i> {{ current_user.points }} 🪙</span>
+<div class="dd"><a href="#" class="nk" tabindex="0">
+{% if current_user.avatar %}<img src="{{ url_for('static',filename='uploads/'+current_user.avatar) }}" class="nav-av" alt="" loading="lazy">{% else %}
+<img src="{{ url_for('static',filename='placeholder_avatar.svg') }}" class="nav-av" alt="" loading="lazy">{% endif %}
+<span class="lbl">{{ current_user.name() }}</span><i class="fas fa-chevron-down" style="font-size:.65rem"></i></a>
+<div class="ddc">
+<div class="ddi" style="font-weight:700;color:var(--warn)"><i class="fas fa-coins"></i> {{ current_user.points }} PongCoins</div>
+<div class="ddd"></div>
+<a href="{{ url_for('main.prof',u=current_user.username) }}" class="ddi"><i class="fas fa-user"></i> Profile</a>
+<a href="{{ url_for('main.dash') }}" class="ddi"><i class="fas fa-table-columns"></i> Dashboard</a>
+<a href="{{ url_for('main.edit_prof') }}" class="ddi"><i class="fas fa-pen-to-square"></i> Edit Profile</a>
+<a href="{{ url_for('main.my_ch') }}" class="ddi"><i class="fas fa-gamepad"></i> Challenges</a>
+<a href="{{ url_for('clans.my_clan_invites') }}" class="ddi"><i class="fas fa-envelope"></i> Clan Invites</a>
+<a href="{{ url_for('main.my_alerts') }}" class="ddi"><i class="fas fa-bell"></i> Alerts
+{% set ur=current_user.alerts.filter_by(read=False).count() %}{% if ur %}<span class="b b-d" style="margin-left:auto">{{ ur }}</span>{% endif %}</a>
+<a href="{{ url_for('main.user_settings') }}" class="ddi"><i class="fas fa-gear"></i> Settings</a>
+<a href="{{ url_for('main.flip_theme') }}" class="ddi"><i class="fas fa-{{ 'sun' if g.theme=='dark' else 'moon' }}"></i> {{ 'Light Mode' if g.theme=='dark' else 'Dark Mode' }}</a>
+{% if current_user.admin %}<div class="ddd"></div>
+<a href="{{ url_for('admin.adm') }}" class="ddi"><i class="fas fa-gear"></i> Admin</a>
+<a href="{{ url_for('admin.adm_audit') }}" class="ddi"><i class="fas fa-gavel"></i> Audit</a>{% endif %}
+<div class="ddd"></div>
+<a href="{{ url_for('main.logout') }}" class="ddi x"><i class="fas fa-right-from-bracket"></i> Log Out</a>
+</div></div>
+{% else %}
+<a href="{{ url_for('main.login') }}" class="nk"><i class="fas fa-sign-in-alt"></i><span class="lbl">Login</span></a>
+<a href="{{ url_for('main.register') }}" class="btn btn-p btn-sm" style="margin-left:.5rem">Sign Up</a>
+{% endif %}
+</div></nav>
+{% endif %}
+{% with msgs=get_flashed_messages(with_categories=true) %}{% if msgs %}<div class="flc">{% for c,m in msgs %}<div class="fl-msg fl-{{ c[0] }}"><i class="fas fa-{{ 'circle-info' if c=='info' else 'circle-check' if c=='success' else 'triangle-exclamation' if c=='warning' else 'circle-xmark' }}"></i>{{ m }}<button class="fl-x" onclick="this.parentElement.remove()">&times;</button></div>{% endfor %}</div>{% endif %}{% endwith %}
+{% if top_alerts|length > 0 %}<div class="ab">{% for ta in top_alerts %}<div class="ab-item ab-{{ ta.cat[0] }}" style="display:flex;align-items:center;gap:.6rem"><a href="{{ ta.link }}" style="display:flex;align-items:center;gap:.6rem;flex:1;color:inherit;text-decoration:none"><i class="fas fa-{{ 'circle-info' if ta.cat=='info' else 'circle-check' if ta.cat=='success' else 'triangle-exclamation' if ta.cat=='warning' else 'circle-xmark' }}"></i><span>{{ ta.title }}</span>{% if ta.gl %}<span class="b b-m" style="margin-left:auto;font-size:.65rem">📢</span>{% endif %}<i class="fas fa-arrow-right" style="margin-left:{% if not ta.gl %}auto{% else %}.3rem{% endif %};font-size:.7rem;opacity:.5"></i></a>{% if current_user.is_authenticated %}<form method="POST" action="{% if ta.gl %}{{ url_for('admin.dismiss_global',gid=ta.id) }}{% else %}{{ url_for('main.dismiss_alert',aid=ta.id) }}{% endif %}" style="margin:0;display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button style="background:none;border:none;color:inherit;cursor:pointer;opacity:.5;font-size:.85rem;padding:.2rem" title="Dismiss">&times;</button></form>{% endif %}</div>{% endfor %}</div>{% endif %}
+<div class="mc">{% block body %}{% endblock %}</div>
+{% if g.get('navbar_position', 'top') == 'left' %}
+</div>{# close sb-main #}
+{% endif %}
+<script>document.querySelectorAll('.fl-msg').forEach(e=>{setTimeout(()=>{e.style.opacity='0';setTimeout(()=>e.remove(),300)},6000)})</script>
+{% block js %}{% endblock %}
+{% if current_user.is_authenticated %}
+<script>
+(function(){
+var lastCount=0;
+function checkAlerts(){
+fetch('/api/alert-count').then(function(r){return r.json()}).then(function(d){
+if(d.count>lastCount && lastCount>0){
+if('Notification' in window && Notification.permission==='granted'){
+var n=new Notification('Tournament Manager',{body:d.count+' new alert'+(d.count>1?'s':''),icon:'/favicon.png',tag:'tm-alert'});
+n.onclick=function(){window.focus();window.location='/alerts';n.close()};
+try{var a=new Audio('data:audio/wav;base64,UklGRl9vT19teleEVBkb3VuZC5jb20AAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAAABkYXRhO28AAH//fwB/AH8AfwB/AH8A');a.volume=0.3;a.play().catch(function(){});}catch(e){}
+}
+}
+lastCount=d.count;
+}).catch(function(){});}
+if('Notification' in window && Notification.permission==='default'){
+document.addEventListener('click',function ask(){Notification.requestPermission();document.removeEventListener('click',ask)},{once:true});
+}
+checkAlerts();setInterval(checkAlerts,30000);
+})();
+</script>
+{% endif %}
+{% if g.get('navbar_position', 'top') == 'left' %}
+<script>
+(function(){
+var sb=document.getElementById('sidebar');
+var main=document.getElementById('sbMain');
+var icon=document.getElementById('sbToggleIcon');
+var overlay=document.getElementById('sbOverlay');
+var stored=localStorage.getItem('sidebar_collapsed');
+if(stored==='true'){sb.classList.add('collapsed');main.classList.add('collapsed');icon.classList.replace('fa-angles-left','fa-angles-right');}
+window.toggleSidebar=function(){
+var c=sb.classList.toggle('collapsed');
+main.classList.toggle('collapsed');
+if(c){icon.classList.replace('fa-angles-left','fa-angles-right');}else{icon.classList.replace('fa-angles-right','fa-angles-left');}
+localStorage.setItem('sidebar_collapsed',c?'true':'false');
+};
+window.toggleMobileSidebar=function(){
+sb.classList.toggle('mobile-open');
+overlay.classList.toggle('open');
+};
+window.closeSidebar=function(){
+sb.classList.remove('mobile-open');
+overlay.classList.remove('open');
+};
+window.toggleSbUserMenu=function(e){
+e.stopPropagation();
+var menu=document.getElementById('sbUserMenu');
+var user=document.getElementById('sbUser');
+var rect=user.getBoundingClientRect();
+menu.style.left=rect.left+'px';
+menu.style.bottom=(window.innerHeight-rect.top+4)+'px';
+menu.classList.toggle('open');
+};
+document.addEventListener('click',function(e){
+var menu=document.getElementById('sbUserMenu');
+if(menu && !document.getElementById('sbUser').contains(e.target)){menu.classList.remove('open');}
+});
+})();
+</script>
+{% endif %}
+{% if current_user.is_authenticated and not current_user.banned %}
+{% include '_chat_widget.html' %}
+{% endif %}
+</body></html>

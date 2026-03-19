@@ -1,0 +1,15 @@
+{% extends "base.html" %}{% block title %}Manage News{% endblock %}{% block body %}
+<div class="ph"><div><h2 class="pt">Manage News</h2><p class="ps">{{ arts|length }} articles</p></div><a href="{{ url_for('main.news_new') }}" class="btn btn-p btn-sm"><i class="fas fa-plus"></i> New</a></div>
+<div class="card"><table class="dt"><thead><tr><th>ID</th><th>Title</th><th>Category</th><th>Auto</th><th>Pinned</th><th>Views</th><th>Date</th><th></th></tr></thead><tbody>
+{% for a in arts %}<tr>
+<td>{{ a.id }}</td>
+<td><a href="{{ url_for('main.news_view',slug=a.slug) }}">{{ a.title[:50] }}{{ '…' if a.title|length > 50 else '' }}</a></td>
+<td><span class="nc" style="margin:0">{{ a.category }}</span></td>
+<td>{% if a.auto %}<span class="b b-m">Auto</span>{% else %}<span class="b b-s">Manual</span>{% endif %}</td>
+<td>{% if a.pinned %}<span class="b b-w"><i class="fas fa-thumbtack"></i></span>{% endif %}</td>
+<td style="color:var(--tm)">{{ a.views }}</td>
+<td style="color:var(--tm);font-size:.82rem">{{ a.created_at.strftime('%b %d, %Y') }}</td>
+<td style="display:flex;gap:.25rem"><a href="{{ url_for('main.news_edit',nid=a.id) }}" class="btn btn-s btn-sm"><i class="fas fa-pen"></i></a><form method="POST" action="{{ url_for('main.news_del',nid=a.id) }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-d btn-sm" onclick="return confirm('Delete?')"><i class="fas fa-trash"></i></button></form></td>
+</tr>{% endfor %}</tbody></table>
+{% if not arts %}<div class="empty"><p>No articles.</p></div>{% endif %}
+</div>{% endblock %}

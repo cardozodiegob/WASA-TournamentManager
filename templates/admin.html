@@ -1,0 +1,72 @@
+{% extends "base.html" %}{% block title %}Admin{% endblock %}{% block body %}<h2 class="pt" style="margin-bottom:1.5rem"><i class="fas fa-gear"></i> Admin</h2><div class="sr"><div class="sc"><div class="sv">{{ s.u }}</div><div class="sl">Users</div></div><div class="sc"><div class="sv">{{ s.t }}</div><div class="sl">Tourneys</div></div><div class="sc"><div class="sv">{{ s.m }}</div><div class="sl">Matches</div></div><div class="sc"><div class="sv">{{ s.a }}</div><div class="sl">Audits</div></div></div>
+
+<!-- CORE -->
+<h3 style="font-weight:700;margin:1.5rem 0 1rem;color:var(--acc);font-size:1rem"><i class="fas fa-cube" style="margin-right:.4rem"></i> Core</h3>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.25rem;margin-bottom:1.5rem">
+
+<div class="card" style="padding:1.25rem"><h3 style="font-weight:700;margin-bottom:.75rem;font-size:1rem"><i class="fas fa-users" style="color:var(--acc);margin-right:.4rem"></i>Users</h3><div style="display:flex;flex-direction:column;gap:.4rem"><a href="{{ url_for('admin.adm_users') }}" class="btn btn-s btn-sm btn-bl"><i class="fas fa-users"></i> Manage Users</a></div></div>
+
+<div class="card" style="padding:1.25rem"><h3 style="font-weight:700;margin-bottom:.75rem;font-size:1rem"><i class="fas fa-trophy" style="color:var(--acc);margin-right:.4rem"></i>Tournaments</h3><div style="display:flex;flex-direction:column;gap:.4rem"><a href="{{ url_for('admin.adm_tourneys') }}" class="btn btn-s btn-sm btn-bl"><i class="fas fa-list"></i> Manage Tournaments</a><a href="{{ url_for('tournaments.t_new') }}" class="btn btn-p btn-sm btn-bl"><i class="fas fa-plus"></i> New Tournament</a></div></div>
+
+<div class="card" style="padding:1.25rem"><h3 style="font-weight:700;margin-bottom:.75rem;font-size:1rem"><i class="fas fa-gamepad" style="color:var(--acc);margin-right:.4rem"></i>Matches</h3><div style="display:flex;flex-direction:column;gap:.4rem"><a href="{{ url_for('admin.adm_matches_list') }}" class="btn btn-s btn-sm btn-bl"><i class="fas fa-gamepad"></i> Manage Matches</a></div></div>
+
+<div class="card" style="padding:1.25rem"><h3 style="font-weight:700;margin-bottom:.75rem;font-size:1rem"><i class="fas fa-calendar-alt" style="color:var(--acc);margin-right:.4rem"></i>Seasons</h3><div style="display:flex;flex-direction:column;gap:.4rem"><a href="{{ url_for('admin.adm_seasons') }}" class="btn btn-s btn-sm btn-bl"><i class="fas fa-calendar-alt"></i> Manage Seasons</a></div></div>
+
+</div>
+
+<!-- CONTENT -->
+<h3 style="font-weight:700;margin:1.5rem 0 1rem;color:var(--acc);font-size:1rem"><i class="fas fa-file-alt" style="margin-right:.4rem"></i> Content</h3>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.25rem;margin-bottom:1.5rem">
+
+<div class="card" style="padding:1.25rem"><h3 style="font-weight:700;margin-bottom:.75rem;font-size:1rem"><i class="fas fa-newspaper" style="color:var(--acc);margin-right:.4rem"></i>News</h3><div style="display:flex;flex-direction:column;gap:.4rem"><a href="{{ url_for('admin.adm_news') }}" class="btn btn-s btn-sm btn-bl"><i class="fas fa-list"></i> Manage News</a><a href="{{ url_for('main.news_new') }}" class="btn btn-p btn-sm btn-bl"><i class="fas fa-plus"></i> New Article</a></div></div>
+
+<div class="card" style="padding:1.25rem"><h3 style="font-weight:700;margin-bottom:.75rem;font-size:1rem"><i class="fas fa-medal" style="color:var(--acc);margin-right:.4rem"></i>Achievements</h3><div style="display:flex;flex-direction:column;gap:.4rem"><a href="{{ url_for('admin.adm_achs') }}" class="btn btn-s btn-sm btn-bl"><i class="fas fa-medal"></i> Manage Achievements</a></div></div>
+
+<div class="card" style="padding:1.25rem"><h3 style="font-weight:700;margin-bottom:.75rem;font-size:1rem"><i class="fas fa-bell" style="color:var(--acc);margin-right:.4rem"></i>Alerts</h3><div style="display:flex;flex-direction:column;gap:.4rem"><a href="{{ url_for('admin.adm_alerts') }}" class="btn btn-s btn-sm btn-bl"><i class="fas fa-bell"></i> Manage Alerts</a></div></div>
+
+</div>
+
+<!-- ECONOMY -->
+<h3 style="font-weight:700;margin:1.5rem 0 1rem;color:var(--acc);font-size:1rem"><i class="fas fa-coins" style="margin-right:.4rem"></i> Economy</h3>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.25rem;margin-bottom:1.5rem">
+
+<div class="card" style="padding:1.25rem"><h3 style="font-weight:700;margin-bottom:.75rem;font-size:1rem"><i class="fas fa-gem" style="color:var(--acc);margin-right:.4rem"></i>Cosmetic Items</h3><div style="display:flex;flex-direction:column;gap:.4rem"><a href="{{ url_for('admin.adm_cosmetics') }}" class="btn btn-s btn-sm btn-bl"><i class="fas fa-gem"></i> Manage Cosmetics</a></div></div>
+
+<div class="card" style="padding:1.25rem"><h3 style="font-weight:700;margin-bottom:.75rem;font-size:1rem"><i class="fas fa-exchange-alt" style="color:var(--acc);margin-right:.4rem"></i>Point Transactions</h3><div style="display:flex;flex-direction:column;gap:.4rem"><a href="{{ url_for('admin.adm_transactions') }}" class="btn btn-s btn-sm btn-bl"><i class="fas fa-exchange-alt"></i> Manage Transactions</a></div></div>
+
+<div class="card" style="padding:1.25rem"><h3 style="font-weight:700;margin-bottom:.75rem;font-size:1rem"><i class="fas fa-dice" style="color:var(--acc);margin-right:.4rem"></i>Bets</h3><div style="display:flex;flex-direction:column;gap:.4rem"><a href="{{ url_for('admin.adm_bets') }}" class="btn btn-s btn-sm btn-bl"><i class="fas fa-dice"></i> Manage Bets</a></div></div>
+
+</div>
+
+<!-- SOCIAL -->
+<h3 style="font-weight:700;margin:1.5rem 0 1rem;color:var(--acc);font-size:1rem"><i class="fas fa-users-rectangle" style="margin-right:.4rem"></i> Social</h3>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.25rem;margin-bottom:1.5rem">
+
+<div class="card" style="padding:1.25rem"><h3 style="font-weight:700;margin-bottom:.75rem;font-size:1rem"><i class="fas fa-thumbs-up" style="color:var(--acc);margin-right:.4rem"></i>Endorsements</h3><div style="display:flex;flex-direction:column;gap:.4rem"><a href="{{ url_for('admin.adm_endorsements') }}" class="btn btn-s btn-sm btn-bl"><i class="fas fa-thumbs-up"></i> Manage Endorsements</a></div></div>
+
+<div class="card" style="padding:1.25rem"><h3 style="font-weight:700;margin-bottom:.75rem;font-size:1rem"><i class="fas fa-chart-line" style="color:var(--acc);margin-right:.4rem"></i>Predictions</h3><div style="display:flex;flex-direction:column;gap:.4rem"><a href="{{ url_for('admin.adm_predictions') }}" class="btn btn-s btn-sm btn-bl"><i class="fas fa-chart-line"></i> Manage Predictions</a></div></div>
+
+<div class="card" style="padding:1.25rem"><h3 style="font-weight:700;margin-bottom:.75rem;font-size:1rem"><i class="fas fa-shield-halved" style="color:var(--acc);margin-right:.4rem"></i>Clan Achievements</h3><div style="display:flex;flex-direction:column;gap:.4rem"><a href="{{ url_for('admin.adm_clan_achs_mgmt') }}" class="btn btn-s btn-sm btn-bl"><i class="fas fa-shield-halved"></i> Manage Clan Achievements</a></div></div>
+
+<div class="card" style="padding:1.25rem"><h3 style="font-weight:700;margin-bottom:.75rem;font-size:1rem"><i class="fas fa-swords" style="color:var(--acc);margin-right:.4rem"></i>Clan Wars</h3><div style="display:flex;flex-direction:column;gap:.4rem"><a href="{{ url_for('admin.adm_clan_wars') }}" class="btn btn-s btn-sm btn-bl"><i class="fas fa-swords"></i> Manage Clan Wars</a></div></div>
+
+</div>
+
+<!-- SYSTEM -->
+<h3 style="font-weight:700;margin:1.5rem 0 1rem;color:var(--acc);font-size:1rem"><i class="fas fa-server" style="margin-right:.4rem"></i> System</h3>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.25rem;margin-bottom:1.5rem">
+
+<div class="card" style="padding:1.25rem"><h3 style="font-weight:700;margin-bottom:.75rem;font-size:1rem"><i class="fas fa-gavel" style="color:var(--acc);margin-right:.4rem"></i>Audit</h3><div style="display:flex;flex-direction:column;gap:.4rem"><a href="{{ url_for('admin.adm_audit') }}" class="btn btn-s btn-sm btn-bl"><i class="fas fa-gavel"></i> Disputes</a></div></div>
+
+<div class="card" style="padding:1.25rem"><h3 style="font-weight:700;margin-bottom:.75rem;font-size:1rem"><i class="fas fa-database" style="color:var(--acc);margin-right:.4rem"></i>Database Backups</h3><div style="display:flex;flex-direction:column;gap:.4rem"><a href="{{ url_for('admin.adm_backups') }}" class="btn btn-s btn-sm btn-bl"><i class="fas fa-database"></i> Manage Backups</a></div></div>
+
+<div class="card" style="padding:1.25rem"><h3 style="font-weight:700;margin-bottom:.75rem;font-size:1rem"><i class="fas fa-cog" style="color:var(--acc);margin-right:.4rem"></i>Settings</h3>
+<form method="POST" action="{{ url_for('admin.adm_set_verify_timeout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div class="fg" style="margin-bottom:.5rem"><label class="fl" style="font-size:.82rem">Default Verification Timeout (days)</label><input type="number" name="default_verify_timeout_days" class="fi" value="{{ default_vt }}" min="0" title="Auto-verify non-tournament pending matches after this many days. 0 = disabled." style="font-size:.85rem"></div>
+<button type="submit" class="btn btn-p btn-sm btn-bl"><i class="fas fa-save"></i> Save</button>
+</form></div>
+
+</div>
+
+<h3 class="pt" style="font-size:1.2rem;margin-bottom:1rem">Recent Users</h3>
+<div class="card"><table class="dt"><thead><tr><th>ID</th><th>User</th><th>Role</th><th>ELO</th><th>Status</th><th></th></tr></thead><tbody>{% for u in ru %}<tr><td>{{ u.id }}</td><td>{{ u.username }}</td><td>{% if u.admin %}<span class="b b-ad"><i class="fas fa-shield"></i> Admin</span>{% else %}<span class="b b-m">User</span>{% endif %}</td><td>{{ u.elo }}</td><td>{% if u.banned %}<span class="b b-d">Banned</span>{% else %}<span class="b b-s">Active</span>{% endif %}</td><td><a href="{{ url_for('admin.adm_edit',uid=u.id) }}" class="btn btn-s btn-sm"><i class="fas fa-pen"></i></a></td></tr>{% endfor %}</tbody></table></div>{% endblock %}

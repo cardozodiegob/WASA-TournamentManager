@@ -1,0 +1,18 @@
+{% extends "base.html" %}{% block title %}Activity{% endblock %}{% block body %}
+<div class="ph"><div><h2 class="pt"><i class="fas fa-stream"></i> Activity Feed</h2><p class="ps">What's happening</p></div></div>
+{% if acts %}
+<div style="display:flex;flex-direction:column;gap:.5rem">
+{% for a in acts %}
+<div class="card" style="padding:.75rem 1rem;display:flex;align-items:center;gap:.75rem;border-left:3px solid var(--a{{ a.color[0] if a.color in ['info','success','warn','danger'] else 'i' }}-bdr)">
+<i class="fas fa-{{ a.icon }}" style="color:var(--a{{ a.color[0] if a.color in ['info','success','warn','danger'] else 'i' }}-t);font-size:1rem;min-width:20px;text-align:center"></i>
+<div style="flex:1">
+<div style="font-size:.88rem">{% if a.user %}<a href="{{ url_for('main.prof',u=a.user.username) }}" style="font-weight:700">{{ a.user.name() }}</a> {% endif %}{{ a.detail }}</div>
+<div style="font-size:.72rem;color:var(--tm)">{{ a.created_at.strftime('%b %d, %H:%M') }}</div>
+</div>
+{% if a.link %}<a href="{{ a.link }}" class="btn btn-s btn-sm" style="font-size:.75rem"><i class="fas fa-eye"></i></a>{% endif %}
+</div>
+{% endfor %}
+</div>
+{% if tp > 1 %}<div style="display:flex;justify-content:center;gap:.5rem;margin-top:1.5rem">{% if pg > 1 %}<a href="{{ url_for('main.activity_feed',page=pg-1) }}" class="btn btn-s btn-sm">&laquo; Prev</a>{% endif %}<span style="padding:.4rem .8rem;color:var(--t2)">Page {{ pg }} / {{ tp }}</span>{% if pg < tp %}<a href="{{ url_for('main.activity_feed',page=pg+1) }}" class="btn btn-s btn-sm">Next &raquo;</a>{% endif %}</div>{% endif %}
+{% else %}<div class="empty"><i class="fas fa-stream"></i><p>No activity yet.</p></div>{% endif %}
+{% endblock %}

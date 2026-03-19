@@ -1,0 +1,36 @@
+{% extends "base.html" %}{% block title %}{{ c.name }} Board{% endblock %}{% block body %}
+<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:1.5rem"><a href="{{ url_for('clans.clan_view',cid=c.id) }}" style="color:var(--tm)"><i class="fas fa-arrow-left"></i></a><h2 class="pt">[{{ c.tag }}] Message Board</h2></div>
+
+<div class="card" style="padding:1.25rem;margin-bottom:1.5rem">
+<form method="POST"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div class="fg" style="margin-bottom:.5rem"><textarea name="content" class="ft" style="min-height:80px" placeholder="Write a message..." required maxlength="1000"></textarea></div>
+<button type="submit" class="btn btn-p btn-sm"><i class="fas fa-paper-plane"></i> Post</button>
+</form></div>
+
+{% if pinned %}
+<div style="margin-bottom:1.5rem">{% for m in pinned %}
+<div class="card" style="padding:1rem;margin-bottom:.5rem;border-left:3px solid var(--warn)">
+<div style="display:flex;justify-content:space-between;align-items:start;gap:.5rem">
+<div style="flex:1"><div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.35rem"><a href="{{ url_for('main.prof',u=m.author.username) }}" style="font-weight:700;font-size:.9rem">{{ m.author.name() }}</a><span class="b b-w" style="font-size:.6rem"><i class="fas fa-thumbtack"></i> Pinned</span><span style="color:var(--tm);font-size:.72rem">{{ m.created_at.strftime('%b %d, %H:%M') }}</span></div>
+<p style="color:var(--t2);font-size:.9rem;white-space:pre-wrap">{{ m.content }}</p></div>
+{% if can_manage %}<div style="display:flex;gap:.25rem">
+<form method="POST" action="{{ url_for('clans.clan_msg_pin',cid=c.id,mid=m.id) }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-s" title="Unpin"><i class="fas fa-thumbtack"></i></button></form>
+<form method="POST" action="{{ url_for('clans.clan_msg_del',cid=c.id,mid=m.id) }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-d" onclick="return confirm('Delete?')"><i class="fas fa-trash"></i></button></form>
+</div>{% endif %}
+</div></div>
+{% endfor %}</div>
+{% endif %}
+
+{% if msgs %}<div style="display:flex;flex-direction:column;gap:.5rem">{% for m in msgs %}
+<div class="card" style="padding:1rem">
+<div style="display:flex;justify-content:space-between;align-items:start;gap:.5rem">
+<div style="flex:1"><div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.35rem"><a href="{{ url_for('main.prof',u=m.author.username) }}" style="font-weight:700;font-size:.9rem">{{ m.author.name() }}</a><span style="color:var(--tm);font-size:.72rem">{{ m.created_at.strftime('%b %d, %H:%M') }}</span></div>
+<p style="color:var(--t2);font-size:.9rem;white-space:pre-wrap">{{ m.content }}</p></div>
+<div style="display:flex;gap:.25rem">
+{% if can_manage %}<form method="POST" action="{{ url_for('clans.clan_msg_pin',cid=c.id,mid=m.id) }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-s" title="Pin"><i class="fas fa-thumbtack"></i></button></form>{% endif %}
+{% if m.user_id==current_user.id or can_manage %}<form method="POST" action="{{ url_for('clans.clan_msg_del',cid=c.id,mid=m.id) }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-d" onclick="return confirm('Delete?')"><i class="fas fa-trash"></i></button></form>{% endif %}
+</div>
+</div></div>
+{% endfor %}</div>{% else %}{% if not pinned %}<div class="empty"><i class="fas fa-comments"></i><p>No messages yet.</p></div>{% endif %}{% endif %}
+{% if tp > 1 %}<div style="display:flex;justify-content:center;gap:.5rem;margin-top:1.5rem">{% if pg > 1 %}<a href="{{ url_for('clans.clan_board',cid=c.id,page=pg-1) }}" class="btn btn-s btn-sm">&laquo; Prev</a>{% endif %}<span style="padding:.4rem .8rem;color:var(--t2)">Page {{ pg }} / {{ tp }}</span>{% if pg < tp %}<a href="{{ url_for('clans.clan_board',cid=c.id,page=pg+1) }}" class="btn btn-s btn-sm">Next &raquo;</a>{% endif %}</div>{% endif %}
+{% endblock %}

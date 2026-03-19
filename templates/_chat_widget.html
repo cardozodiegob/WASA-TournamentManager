@@ -1,0 +1,422 @@
+{% set user_clan = current_user.clans.first() %}
+{% raw %}<style>
+#cw-toggle{position:fixed;bottom:20px;right:20px;z-index:9999;width:52px;height:52px;border-radius:50%;background:var(--acc);color:#fff;border:none;cursor:pointer;font-size:1.3rem;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(108,92,231,.35);transition:transform .2s}
+#cw-toggle:hover{transform:scale(1.08)}
+#cw-badge{position:absolute;top:-2px;right:-2px;background:var(--err);color:#fff;font-size:.65rem;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:none;align-items:center;justify-content:center;padding:0 4px}
+#cw-panel{position:fixed;bottom:80px;right:20px;z-index:9999;width:380px;height:500px;background:var(--bg2);border:1px solid var(--bdr);border-radius:14px;display:none;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,.35);overflow:hidden}
+#cw-panel.open{display:flex}
+#cw-tabs{display:flex;border-bottom:1px solid var(--bdr);background:var(--bgc);flex-shrink:0}
+.cw-tab{flex:1;padding:.55rem 0;text-align:center;font-size:.82rem;font-weight:600;color:var(--tm);cursor:pointer;border:none;background:none;transition:all .15s;position:relative}
+.cw-tab:hover{color:var(--t1)}.cw-tab.on{color:var(--acc);box-shadow:inset 0 -2px 0 var(--acc)}
+.cw-tab-badge{position:absolute;top:4px;right:12px;background:var(--err);color:#fff;font-size:.6rem;font-weight:700;min-width:14px;height:14px;border-radius:7px;display:none;align-items:center;justify-content:center;padding:0 3px}
+#cw-content{flex:1;overflow:hidden;display:flex;flex-direction:column}
+#cw-messages{flex:1;overflow-y:auto;padding:.75rem;display:flex;flex-direction:column;gap:.4rem}
+.cw-msg{display:flex;gap:.6rem;padding:.35rem;border-radius:6px;transition:background .12s}
+.cw-msg:hover{background:var(--bgc)}
+.cw-msg-av{width:30px;height:30px;border-radius:50%;object-fit:cover;flex-shrink:0}
+.cw-msg-body{flex:1;min-width:0}
+.cw-msg-hdr{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap}
+.cw-msg-name{font-weight:600;font-size:.8rem}
+.cw-msg-flair{font-size:.75rem}
+.cw-msg-time{font-size:.68rem;color:var(--tm);margin-left:auto}
+.cw-msg-text{font-size:.82rem;color:var(--t1);margin-top:.15rem;word-break:break-word}
+.cw-msg-actions{display:none;gap:.2rem;margin-left:auto;align-items:center}
+.cw-msg:hover .cw-msg-actions{display:flex}
+.cw-del-btn,.cw-mute-btn{background:none;border:none;cursor:pointer;font-size:.7rem;padding:1px 5px;border-radius:3px}
+.cw-del-btn{color:var(--err)}.cw-del-btn:hover{background:var(--err);color:#fff}
+.cw-mute-btn{color:var(--warn)}.cw-mute-btn:hover{background:var(--warn);color:#fff}
+#cw-input-area{display:flex;gap:.4rem;padding:.5rem;border-top:1px solid var(--bdr);background:var(--bgc);flex-shrink:0;align-items:end}
+#cw-input{flex:1;background:var(--bg2);border:1px solid var(--bdr);border-radius:6px;padding:.4rem .6rem;color:var(--t1);font-size:.82rem;resize:none;min-height:34px;max-height:68px;font-family:inherit}
+#cw-input:focus{outline:none;border-color:var(--acc)}
+#cw-send{background:var(--acc);color:#fff;border:none;border-radius:6px;padding:.4rem .7rem;cursor:pointer;font-size:.82rem}
+#cw-send:hover{opacity:.9}#cw-send:disabled{opacity:.5;cursor:not-allowed}
+#cw-counter{font-size:.68rem;color:var(--tm);align-self:center}
+.cw-empty{text-align:center;color:var(--tm);padding:2rem .5rem;font-size:.85rem}
+.cw-empty i{font-size:1.5rem;display:block;margin-bottom:.4rem}
+/* DM conversation list */
+.cw-conv{display:flex;gap:.6rem;padding:.55rem .75rem;cursor:pointer;border-radius:6px;transition:background .12s;align-items:center}
+.cw-conv:hover{background:var(--bgc)}
+.cw-conv-av{width:34px;height:34px;border-radius:50%;object-fit:cover;flex-shrink:0}
+.cw-conv-info{flex:1;min-width:0}
+.cw-conv-name{font-size:.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cw-conv-preview{font-size:.75rem;color:var(--tm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cw-conv-badge{background:var(--err);color:#fff;font-size:.65rem;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 4px;flex-shrink:0}
+/* DM header bar */
+#cw-dm-header{display:none;align-items:center;gap:.5rem;padding:.4rem .75rem;border-bottom:1px solid var(--bdr);background:var(--bgc);flex-shrink:0}
+#cw-dm-back{background:none;border:none;color:var(--t2);cursor:pointer;font-size:.9rem;padding:2px 6px;border-radius:4px}
+#cw-dm-back:hover{color:var(--t1);background:var(--bgh)}
+#cw-dm-title{font-size:.85rem;font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* New DM search */
+#cw-dm-search-area{display:none;padding:.5rem;border-bottom:1px solid var(--bdr);background:var(--bgc);flex-shrink:0}
+#cw-dm-search{width:100%;background:var(--bg2);border:1px solid var(--bdr);border-radius:6px;padding:.35rem .6rem;color:var(--t1);font-size:.82rem;font-family:inherit}
+#cw-dm-search:focus{outline:none;border-color:var(--acc)}
+#cw-dm-results{max-height:150px;overflow-y:auto}
+.cw-dm-result{display:flex;align-items:center;gap:.5rem;padding:.4rem .6rem;cursor:pointer;border-radius:4px;font-size:.82rem}
+.cw-dm-result:hover{background:var(--bgh)}
+.cw-dm-result img{width:24px;height:24px;border-radius:50%;object-fit:cover}
+#cw-new-dm-btn{display:flex;align-items:center;justify-content:center;gap:.3rem;padding:.4rem;margin:.4rem .75rem;border:1px dashed var(--bdr);border-radius:6px;color:var(--tm);font-size:.8rem;cursor:pointer;background:none;width:calc(100% - 1.5rem)}
+#cw-new-dm-btn:hover{border-color:var(--acc);color:var(--acc)}
+.cw-msg-grouped{padding-left:42px}
+.cw-msg-grouped .cw-msg-av,.cw-msg-grouped .cw-msg-hdr{display:none}
+.cw-msg-grouped .cw-msg-text{margin-top:0}
+.cw-msg-grouped:hover .cw-msg-actions{display:flex;position:absolute;right:4px;top:2px}
+.cw-msg-grouped{position:relative}
+@media(max-width:500px){#cw-panel{width:calc(100vw - 20px);right:10px;bottom:70px;height:60vh}}
+</style>{% endraw %}
+
+<button id="cw-toggle" onclick="CW.toggle()" aria-label="Toggle chat"><i class="fas fa-comments"></i><span id="cw-badge"></span></button>
+<div id="cw-panel">
+  <div id="cw-tabs">
+    <button class="cw-tab on" data-tab="global" onclick="CW.switchTab('global')">Global<span class="cw-tab-badge" id="cw-badge-global"></span></button>
+    <button class="cw-tab" data-tab="clan" onclick="CW.switchTab('clan')">Clan<span class="cw-tab-badge" id="cw-badge-clan"></span></button>
+    <button class="cw-tab" data-tab="dms" onclick="CW.switchTab('dms')">DMs<span class="cw-tab-badge" id="cw-badge-dms"></span></button>
+  </div>
+  <div id="cw-dm-header"><button id="cw-dm-back" onclick="CW.dmBack()"><i class="fas fa-arrow-left"></i></button><span id="cw-dm-title"></span></div>
+  <div id="cw-dm-search-area"><input id="cw-dm-search" placeholder="Search user to message..." autocomplete="off"><div id="cw-dm-results"></div></div>
+  <div id="cw-content">
+    <div id="cw-messages"></div>
+  </div>
+  <div id="cw-input-area">
+    <textarea id="cw-input" placeholder="Type a message..." maxlength="500" rows="1"></textarea>
+    <span id="cw-counter">0/500</span>
+    <button id="cw-send" onclick="CW.send()"><i class="fas fa-paper-plane"></i></button>
+  </div>
+</div>
+
+<script>
+var CW=(function(){
+  var panel=document.getElementById('cw-panel'),
+      msgs=document.getElementById('cw-messages'),
+      input=document.getElementById('cw-input'),
+      counter=document.getElementById('cw-counter'),
+      sendBtn=document.getElementById('cw-send'),
+      badge=document.getElementById('cw-badge'),
+      dmHeader=document.getElementById('cw-dm-header'),
+      dmTitle=document.getElementById('cw-dm-title'),
+      dmSearchArea=document.getElementById('cw-dm-search-area'),
+      dmSearchInput=document.getElementById('cw-dm-search'),
+      dmResults=document.getElementById('cw-dm-results'),
+      inputArea=document.getElementById('cw-input-area');
+
+  var isAdmin={{ 'true' if current_user.admin else 'false' }};
+  var csrfToken="{{ csrf_token() }}";
+  var myClanId={{ user_clan.id if user_clan else 'null' }};
+  var myUserId={{ current_user.id }};
+
+  var activeTab='global';
+  var sinceId={global:0,clan:0};
+  var autoScroll=true;
+  var pollTimer=null, convPollTimer=null;
+
+  // DM state
+  var dmView='list'; // 'list' or 'conv'
+  var dmConvId=null, dmSinceId=0, dmConvName='';
+  var totalUnread=0;
+  var searchTimeout=null;
+
+  // Restore state
+  if(sessionStorage.getItem('cw_open')==='1') panel.classList.add('open');
+
+  function toggle(){
+    panel.classList.toggle('open');
+    sessionStorage.setItem('cw_open',panel.classList.contains('open')?'1':'0');
+    if(panel.classList.contains('open')) startPolling();
+    else stopPolling();
+  }
+
+  function switchTab(tab){
+    activeTab=tab;
+    document.querySelectorAll('.cw-tab').forEach(function(t){t.classList.toggle('on',t.dataset.tab===tab)});
+    dmHeader.style.display='none';
+    dmSearchArea.style.display='none';
+    msgs.innerHTML='';
+    sinceId.global=0; sinceId.clan=0; dmSinceId=0;
+    autoScroll=true;
+    if(tab==='dms'){
+      dmView='list'; dmConvId=null;
+      inputArea.style.display='none';
+      loadConversations();
+    } else {
+      inputArea.style.display='flex';
+      if(tab==='clan' && !myClanId){
+        msgs.innerHTML='<div class="cw-empty"><i class="fas fa-shield-halved"></i>Join a clan to chat here</div>';
+        inputArea.style.display='none';
+      }
+    }
+    startPolling();
+  }
+
+  function startPolling(){
+    stopPolling();
+    if(!panel.classList.contains('open')) return;
+    if(activeTab==='global'||activeTab==='clan'){
+      pollChat();
+      pollTimer=setInterval(pollChat,3000);
+    } else if(activeTab==='dms'){
+      if(dmView==='conv'&&dmConvId){
+        pollDM();
+        pollTimer=setInterval(pollDM,3000);
+      }
+      loadConversations();
+      convPollTimer=setInterval(loadConversations,5000);
+    }
+  }
+
+  function stopPolling(){
+    if(pollTimer){clearInterval(pollTimer);pollTimer=null;}
+    if(convPollTimer){clearInterval(convPollTimer);convPollTimer=null;}
+  }
+
+  msgs.addEventListener('scroll',function(){
+    autoScroll=(msgs.scrollHeight-msgs.scrollTop-msgs.clientHeight)<50;
+  });
+
+  if(input){
+    input.addEventListener('input',function(){counter.textContent=input.value.length+'/500';});
+    input.addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();CW.send();}});
+  }
+
+  function renderMsg(m,isDM,grouped){
+    var div=document.createElement('div');
+    div.className='cw-msg'+(grouped?' cw-msg-grouped':'');div.id='cwm-'+m.id;div.dataset.uid=m.user_id;
+    var avSrc=m.avatar?'/static/uploads/'+m.avatar:'/static/placeholder_avatar.svg';
+    var ns=m.name_color_css?' style="'+m.name_color_css+'"':'';
+    var fl=m.flair_css?'<span class="cw-msg-flair">'+m.flair_css+'</span>':'';
+    var ab='';
+    if(isAdmin){
+      var delUrl=isDM?'/chat/dm/delete/'+m.id:'/chat/delete/'+m.id;
+      ab='<div class="cw-msg-actions">'+
+        '<button class="cw-del-btn" onclick="CW.delMsg('+m.id+','+!!isDM+')" title="Delete"><i class="fas fa-trash"></i></button>'+
+        (isDM?'':'<button class="cw-mute-btn" onclick="CW.muteUser('+m.user_id+')" title="Mute"><i class="fas fa-volume-mute"></i></button>')+
+        '</div>';
+    }
+    div.innerHTML='<img src="'+avSrc+'" class="cw-msg-av" loading="lazy">'+
+      '<div class="cw-msg-body"><div class="cw-msg-hdr">'+fl+
+      '<span class="cw-msg-name"'+ns+'>'+m.display_name+'</span>'+
+      (m.is_admin?' <span class="b b-d" style="font-size:.6rem">ADMIN</span>':'')+
+      '<span class="cw-msg-time" title="'+m.ts_iso+'">'+m.created_at+'</span>'+ab+
+      '</div><div class="cw-msg-text">'+m.content+'</div></div>';
+    return div;
+  }
+
+  function pollChat(){
+    if(activeTab==='clan'&&!myClanId) return;
+    var url='/chat/poll?room='+activeTab;
+    if(activeTab==='clan') url+='&clan_id='+myClanId;
+    var sid=sinceId[activeTab];
+    if(sid) url+='&since_id='+sid;
+    fetch(url).then(function(r){return r.json()}).then(function(d){
+      if(!d.ok) return;
+      if(!sid && d.messages.length>0) msgs.innerHTML='';
+      d.messages.forEach(function(m){
+        if(!document.getElementById('cwm-'+m.id)){
+          var last=msgs.querySelector('.cw-msg:last-child');
+          var grouped=last&&last.dataset.uid==m.user_id;
+          msgs.appendChild(renderMsg(m,false,grouped));
+          sinceId[activeTab]=m.id;
+        }
+      });
+      if(!sid && d.messages.length===0 && !msgs.querySelector('.cw-msg')){
+        msgs.innerHTML='<div class="cw-empty"><i class="fas fa-comments"></i>No messages yet</div>';
+      }
+      if(autoScroll) msgs.scrollTop=msgs.scrollHeight;
+    }).catch(function(){});
+  }
+
+  // ---- DM functions ----
+  function loadConversations(){
+    fetch('/chat/dm/list').then(function(r){return r.json()}).then(function(d){
+      if(!d.ok) return;
+      totalUnread=0;
+      d.conversations.forEach(function(c){totalUnread+=c.unread_count;});
+      updateBadge();
+      // Update DM tab badge
+      var dmBadge=document.getElementById('cw-badge-dms');
+      if(totalUnread>0){dmBadge.style.display='flex';dmBadge.textContent=totalUnread;}
+      else{dmBadge.style.display='none';}
+      if(activeTab!=='dms'||dmView!=='list') return;
+      msgs.innerHTML='';
+      if(d.conversations.length===0){
+        msgs.innerHTML='<div class="cw-empty"><i class="fas fa-envelope"></i>No conversations yet</div>';
+      }
+      // New DM button
+      var nb=document.createElement('button');nb.id='cw-new-dm-btn';
+      nb.innerHTML='<i class="fas fa-plus"></i> New Message';
+      nb.onclick=function(){showDMSearch();};
+      msgs.appendChild(nb);
+      d.conversations.forEach(function(c){
+        var div=document.createElement('div');div.className='cw-conv';
+        var avSrc=c.other_user.avatar?'/static/uploads/'+c.other_user.avatar:'/static/placeholder_avatar.svg';
+        var preview=c.last_message||'No messages';
+        if(preview.length>40) preview=preview.substring(0,40)+'…';
+        var ubadge=c.unread_count>0?'<span class="cw-conv-badge">'+c.unread_count+'</span>':'';
+        div.innerHTML='<img src="'+avSrc+'" class="cw-conv-av" loading="lazy">'+
+          '<div class="cw-conv-info"><div class="cw-conv-name">'+c.other_user.display_name+'</div>'+
+          '<div class="cw-conv-preview">'+preview+'</div></div>'+ubadge;
+        div.onclick=function(){openConversation(c.id,c.other_user.display_name);};
+        msgs.appendChild(div);
+      });
+    }).catch(function(){});
+  }
+
+  function openConversation(convId,name){
+    dmView='conv'; dmConvId=convId; dmSinceId=0; dmConvName=name;
+    dmHeader.style.display='flex';
+    dmTitle.textContent=name;
+    dmSearchArea.style.display='none';
+    inputArea.style.display='flex';
+    msgs.innerHTML='';
+    autoScroll=true;
+    markRead(convId);
+    startPolling();
+  }
+
+  function pollDM(){
+    if(!dmConvId) return;
+    var url='/chat/dm/poll?conversation_id='+dmConvId;
+    if(dmSinceId) url+='&since_id='+dmSinceId;
+    fetch(url).then(function(r){return r.json()}).then(function(d){
+      if(!d.ok) return;
+      if(!dmSinceId && d.messages.length>0) msgs.innerHTML='';
+      d.messages.forEach(function(m){
+        if(!document.getElementById('cwm-'+m.id)){
+          var last=msgs.querySelector('.cw-msg:last-child');
+          var grouped=last&&last.dataset.uid==m.user_id;
+          msgs.appendChild(renderMsg(m,true,grouped));
+          dmSinceId=m.id;
+        }
+      });
+      if(!dmSinceId && d.messages.length===0 && !msgs.querySelector('.cw-msg')){
+        msgs.innerHTML='<div class="cw-empty"><i class="fas fa-comments"></i>Start the conversation</div>';
+      }
+      if(autoScroll) msgs.scrollTop=msgs.scrollHeight;
+    }).catch(function(){});
+  }
+
+  function markRead(convId){
+    fetch('/chat/dm/read',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':csrfToken},body:JSON.stringify({conversation_id:convId})}).catch(function(){});
+  }
+
+  function dmBack(){
+    dmView='list'; dmConvId=null; dmSinceId=0;
+    dmHeader.style.display='none';
+    dmSearchArea.style.display='none';
+    inputArea.style.display='none';
+    msgs.innerHTML='';
+    loadConversations();
+    startPolling();
+  }
+
+  function showDMSearch(){
+    dmSearchArea.style.display='block';
+    dmSearchInput.value='';
+    dmResults.innerHTML='';
+    dmSearchInput.focus();
+  }
+
+  dmSearchInput.addEventListener('input',function(){
+    clearTimeout(searchTimeout);
+    var q=dmSearchInput.value.trim();
+    if(q.length<2){dmResults.innerHTML='';return;}
+    searchTimeout=setTimeout(function(){
+      fetch('/chat/dm/search-users?q='+encodeURIComponent(q)).then(function(r){return r.json()}).then(function(d){
+        dmResults.innerHTML='';
+        (d.users||[]).forEach(function(u){
+          if(u.id===myUserId) return;
+          var div=document.createElement('div');div.className='cw-dm-result';
+          var avSrc=u.avatar?'/static/uploads/'+u.avatar:'/static/placeholder_avatar.svg';
+          div.innerHTML='<img src="'+avSrc+'" loading="lazy"><span>'+u.display_name+'</span>';
+          div.onclick=function(){startDM(u.id);};
+          dmResults.appendChild(div);
+        });
+      }).catch(function(){});
+    },300);
+  });
+
+  function startDM(userId){
+    fetch('/chat/dm/start',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':csrfToken},body:JSON.stringify({user_id:userId})})
+    .then(function(r){return r.json()}).then(function(d){
+      if(d.ok){
+        dmSearchArea.style.display='none';
+        openConversation(d.conversation.id,d.conversation.other_user.display_name);
+      } else { alert(d.error||'Failed'); }
+    }).catch(function(){});
+  }
+
+  function updateBadge(){
+    if(totalUnread>0){badge.style.display='flex';badge.textContent=totalUnread;}
+    else{badge.style.display='none';}
+  }
+
+  function send(){
+    if(!input) return;
+    var content=input.value.trim();
+    if(!content||content.length>500) return;
+    sendBtn.disabled=true;
+    var url,body;
+    if(activeTab==='dms'&&dmView==='conv'&&dmConvId){
+      url='/chat/dm/send';
+      body={conversation_id:dmConvId,content:content};
+    } else {
+      url='/chat/send';
+      body={room:activeTab,content:content};
+      if(activeTab==='clan') body.clan_id=myClanId;
+    }
+    fetch(url,{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':csrfToken},body:JSON.stringify(body)})
+    .then(function(r){return r.json()}).then(function(d){
+      sendBtn.disabled=false;
+      if(d.ok){
+        input.value='';counter.textContent='0/500';
+        var isDM=(activeTab==='dms');
+        var last=msgs.querySelector('.cw-msg:last-child');
+        var grouped=last&&last.dataset.uid==d.message.user_id;
+        msgs.appendChild(renderMsg(d.message,isDM,grouped));
+        autoScroll=true;msgs.scrollTop=msgs.scrollHeight;
+        // Clear empty placeholder
+        var emp=msgs.querySelector('.cw-empty');if(emp)emp.remove();
+      } else { alert(d.error||'Failed to send'); }
+    }).catch(function(){sendBtn.disabled=false;});
+  }
+
+  function delMsg(msgId,isDM){
+    if(!confirm('Delete this message?')) return;
+    var url=isDM?'/chat/dm/delete/'+msgId:'/chat/delete/'+msgId;
+    fetch(url,{method:'POST',headers:{'X-CSRFToken':csrfToken}}).then(function(r){return r.json()}).then(function(d){
+      if(d.ok){var el=document.getElementById('cwm-'+msgId);if(el)el.remove();}
+    });
+  }
+
+  function muteUser(uid){
+    var mins=prompt('Mute duration in minutes (empty=permanent):','10');
+    if(mins===null) return;
+    var body={};if(mins&&parseInt(mins)>0) body.duration=parseInt(mins);
+    fetch('/chat/mute/'+uid,{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':csrfToken},body:JSON.stringify(body)})
+    .then(function(r){return r.json()}).then(function(d){if(d.ok)alert('User muted');});
+  }
+
+  // Expose for profile.html
+  window.startDMFromProfile=function(userId){
+    panel.classList.add('open');
+    sessionStorage.setItem('cw_open','1');
+    switchTab('dms');
+    startDM(userId);
+  };
+
+  // Initial poll on load if open
+  if(panel.classList.contains('open')) startPolling();
+  // Always poll conversations for badge even when closed
+  setInterval(function(){
+    fetch('/chat/dm/list').then(function(r){return r.json()}).then(function(d){
+      if(!d.ok) return;
+      totalUnread=0;
+      d.conversations.forEach(function(c){totalUnread+=c.unread_count;});
+      updateBadge();
+      var dmBadge=document.getElementById('cw-badge-dms');
+      if(totalUnread>0){dmBadge.style.display='flex';dmBadge.textContent=totalUnread;}
+      else{dmBadge.style.display='none';}
+    }).catch(function(){});
+  },10000);
+
+  return {toggle:toggle,switchTab:switchTab,send:send,delMsg:delMsg,muteUser:muteUser,dmBack:dmBack,startDM:startDM};
+})();
+</script>

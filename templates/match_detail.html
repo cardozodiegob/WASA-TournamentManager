@@ -1,0 +1,294 @@
+{% extends "base.html" %}{% block title %}Match #{{ m.id }}{% endblock %}{% block body %}
+<div style="max-width:700px;margin:0 auto">
+<a href="{{ url_for('matches.match_list') }}" style="color:var(--tm)"><i class="fas fa-arrow-left"></i> All Matches</a>
+<h2 class="pt" style="margin-top:1rem;margin-bottom:1.5rem">Match #{{ m.id }}</h2>
+
+<div class="card" style="margin-bottom:1.5rem">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem">
+<div style="text-align:center;flex:1">
+<div style="font-size:1.1rem;font-weight:700;{% if m.winner_id==m.p1_id %}color:var(--ok){% endif %}"><a href="{{ url_for('main.prof',u=m.p1.username) }}">{{ m.p1.name() }}</a></div>
+<div style="font-size:.8rem;color:var(--tm)">ELO: {{ m.p1.elo }}{% if m.ranked %} ({{ '+' if m.elo_d1>0 else '' }}{{ m.elo_d1 }}){% endif %}</div>
+</div>
+<div style="text-align:center">
+<div style="font-size:2rem;font-weight:800;color:var(--acc)">{{ m.p1_score }} – {{ m.p2_score }}</div>
+<div style="font-size:.75rem;color:var(--tm)">{{ m.played_at.strftime('%B %d, %Y %H:%M') }}</div>
+</div>
+<div style="text-align:center;flex:1">
+<div style="font-size:1.1rem;font-weight:700;{% if m.winner_id==m.p2_id %}color:var(--ok){% endif %}"><a href="{{ url_for('main.prof',u=m.p2.username) }}">{{ m.p2.name() }}</a></div>
+<div style="font-size:.8rem;color:var(--tm)">ELO: {{ m.p2.elo }}{% if m.ranked %} ({{ '+' if m.elo_d2>0 else '' }}{{ m.elo_d2 }}){% endif %}</div>
+</div>
+</div>
+
+<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem">
+<span class="b {% if m.ranked %}b-a{% else %}b-m{% endif %}">{{ 'Ranked' if m.ranked else 'Unranked' }}</span>
+{% if m.draw %}<span class="b b-w">Draw</span>{% elif m.winner %}<span class="b b-s">Winner: {{ m.winner.name() }}</span>{% endif %}
+<span class="b {% if m.state=='verified' %}b-s{% elif m.state=='pending' %}b-w{% else %}b-d{% endif %}">{{ m.state|title }}</span>
+{% if m.tourney_id %}<span class="b b-i">Tournament</span>{% endif %}
+{% if m.stake %}<span class="b b-w">🪙 Stake: {{ m.stake }} each</span>{% endif %}
+{% if m.series_format and m.series_format != 'bo1' %}<span class="b b-i">{{ m.series_format|upper }}</span>{% endif %}
+</div>
+
+{% if m.series_format and m.series_format != 'bo1' and games %}
+<div style="margin-bottom:1rem">
+<div style="font-size:.82rem;color:var(--tm);margin-bottom:.5rem"><i class="fas fa-list-ol"></i> Series Games ({{ m.series_format|upper }})</div>
+<table class="dt" style="font-size:.9rem"><thead><tr><th>#</th><th>{{ m.p1.name() }}</th><th>{{ m.p2.name() }}</th><th>Winner</th></tr></thead><tbody>
+{% for g in games %}<tr><td style="font-weight:700">{{ g.game_number }}</td><td>{{ g.p1_score }}</td><td>{{ g.p2_score }}</td><td>{% if g.winner %}{{ g.winner.name() }}{% else %}–{% endif %}</td></tr>{% endfor %}
+</tbody></table>
+</div>
+{% endif %}
+
+{% if m.sets.count() > 0 %}
+<div style="margin-bottom:1rem">
+<div style="font-size:.82rem;color:var(--tm);margin-bottom:.5rem"><i class="fas fa-table-tennis-paddle-ball"></i> Set Scores</div>
+<table class="dt" style="font-size:.9rem"><thead><tr><th>Set</th><th>{{ m.p1.name() }}</th><th>{{ m.p2.name() }}</th><th>Winner</th></tr></thead><tbody>
+{% for s in m.sets.all() %}<tr><td style="font-weight:700">{{ s.set_number }}</td><td>{{ s.p1_points }}</td><td>{{ s.p2_points }}</td><td>{% if s.winner %}{{ s.winner.name() }}{% else %}–{% endif %}</td></tr>{% endfor %}
+<tr style="font-weight:700;border-top:2px solid var(--bdr)"><td>Total</td><td>{{ m.p1_total_points }}</td><td>{{ m.p2_total_points }}</td><td></td></tr>
+</tbody></table>
+</div>
+{% endif %}
+
+{% if m.series_format and m.series_format != 'bo1' and m.state in ('accepted','scheduled') and current_user.is_authenticated and current_user.id in (m.p1_id, m.p2_id) %}
+{% set req_wins = 2 if m.series_format == 'bo3' else 3 %}
+{% set p1w = games|selectattr('winner_id','equalto',m.p1_id)|list|length %}
+{% set p2w = games|selectattr('winner_id','equalto',m.p2_id)|list|length %}
+{% if p1w < req_wins and p2w < req_wins %}
+<div style="background:var(--bg3);border-radius:10px;padding:1rem;margin-bottom:1rem">
+<div style="font-size:.85rem;font-weight:600;margin-bottom:.5rem"><i class="fas fa-plus-circle" style="color:var(--acc)"></i> Submit Game {{ games|length + 1 }}</div>
+<form method="POST" action="{{ url_for('matches.submit_series_game',mid=m.id) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div style="display:flex;gap:.75rem;flex-wrap:wrap;align-items:end">
+<div class="fg" style="flex:1;min-width:80px;margin-bottom:0"><label class="fl">{{ m.p1.name() }} Score</label><input type="number" name="p1_score" class="fi" min="0" value="0" required></div>
+<div class="fg" style="flex:1;min-width:80px;margin-bottom:0"><label class="fl">{{ m.p2.name() }} Score</label><input type="number" name="p2_score" class="fi" min="0" value="0" required></div>
+<button type="submit" class="btn btn-p btn-sm"><i class="fas fa-check"></i> Submit</button>
+</div>
+</form>
+</div>
+{% endif %}
+{% endif %}
+
+{% if m.winner_comment %}
+<div style="background:var(--bg3);border-radius:10px;padding:1rem;margin-bottom:1rem;border-left:3px solid var(--acc)">
+<div style="font-size:.8rem;color:var(--tm);margin-bottom:.3rem"><i class="fas fa-comment"></i> {{ m.winner.name() if m.winner else 'Winner' }} says:</div>
+<p style="color:var(--t2);font-size:.92rem;font-style:italic">"{{ m.winner_comment }}"</p>
+</div>
+{% if current_user.is_authenticated and current_user.admin %}
+<form method="POST" action="{{ url_for('matches.match_edit_comment',mid=m.id) }}" style="margin-bottom:1rem">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div class="fg"><label class="fl">Edit Comment (Admin)</label><textarea name="winner_comment" class="ft" style="min-height:60px">{{ m.winner_comment or '' }}</textarea></div>
+<button type="submit" class="btn btn-s btn-sm"><i class="fas fa-save"></i> Update Comment</button>
+</form>
+{% endif %}
+{% elif current_user.is_authenticated and current_user.admin %}
+<form method="POST" action="{{ url_for('matches.match_edit_comment',mid=m.id) }}" style="margin-bottom:1rem">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div class="fg"><label class="fl">Add Winner Comment (Admin)</label><textarea name="winner_comment" class="ft" style="min-height:60px" placeholder="Add a comment on behalf of the winner..."></textarea></div>
+<button type="submit" class="btn btn-s btn-sm"><i class="fas fa-plus"></i> Add Comment</button>
+</form>
+{% endif %}
+
+{% if m.proof_image %}
+<div style="margin-bottom:1rem"><div style="font-size:.82rem;color:var(--tm);margin-bottom:.5rem"><i class="fas fa-camera"></i> Match Proof</div><a href="{{ url_for('static',filename='uploads/'+m.proof_image) }}" target="_blank"><img src="{{ url_for('static',filename='uploads/'+m.proof_image) }}" style="max-width:100%;border-radius:10px;border:1px solid var(--bdr)"></a></div>
+{% endif %}
+
+<div style="margin:1rem 0">
+<div style="font-size:.82rem;color:var(--tm);margin-bottom:.5rem">Reactions</div>
+<div style="display:flex;gap:.35rem;flex-wrap:wrap" id="react-btns-{{ m.id }}">
+{% for e in ['🔥','😱','💀','👏','😂','💪','🎯','❤️'] %}
+<button onclick="react({{ m.id }},'{{ e }}')" class="btn btn-s btn-sm react-btn" data-emoji="{{ e }}" style="padding:.3rem .6rem;font-size:1rem;min-width:40px;transition:all .15s" title="{{ e }}">{{ e }}<span class="react-count" style="font-size:.72rem;font-weight:700;margin-left:.2rem"></span></button>
+{% endfor %}
+</div>
+</div>
+
+{% if m.notes %}
+<div style="color:var(--tm);font-size:.85rem"><strong>Notes:</strong> {{ m.notes }}</div>
+{% endif %}
+</div>
+
+{% if bet_data %}
+<div class="card" style="margin-bottom:1.5rem">
+<h3 style="font-weight:700;margin-bottom:1rem"><i class="fas fa-coins" style="color:var(--acc)"></i> Betting Odds</h3>
+<div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem">
+<div style="flex:1;min-width:140px;background:var(--bg3);border-radius:10px;padding:1rem;text-align:center">
+<div style="font-size:.8rem;color:var(--tm);margin-bottom:.3rem">{{ m.p1.name() }}</div>
+<div style="font-size:1.5rem;font-weight:800;color:var(--acc)">{{ bet_data.p1_odds }}x</div>
+<div style="font-size:.75rem;color:var(--tm)">Pool: {{ bet_data.p1_pool }} 🪙</div>
+</div>
+<div style="flex:1;min-width:140px;background:var(--bg3);border-radius:10px;padding:1rem;text-align:center">
+<div style="font-size:.8rem;color:var(--tm);margin-bottom:.3rem">{{ m.p2.name() }}</div>
+<div style="font-size:1.5rem;font-weight:800;color:var(--acc)">{{ bet_data.p2_odds }}x</div>
+<div style="font-size:.75rem;color:var(--tm)">Pool: {{ bet_data.p2_pool }} 🪙</div>
+</div>
+</div>
+<div style="text-align:center;font-size:.82rem;color:var(--tm);margin-bottom:1rem">Total Pool: {{ bet_data.total }} 🪙 · {{ bet_data.count }} bet{{ 's' if bet_data.count != 1 else '' }}</div>
+{% if bet_data.my_bet %}
+<div style="background:var(--bg3);border-radius:10px;padding:.75rem 1rem;border-left:3px solid var(--acc)">
+<div style="font-size:.85rem;color:var(--t2)"><i class="fas fa-check-circle" style="color:var(--ok)"></i> You bet <strong>{{ bet_data.my_bet.amount }} 🪙</strong> on <strong>{{ bet_data.my_bet.predicted_winner.name() }}</strong></div>
+</div>
+{% elif current_user.is_authenticated and m.state in ('pending','accepted','scheduled') and current_user.id not in (m.p1_id, m.p2_id) %}
+<form method="POST" action="{{ url_for('matches.place_bet',mid=m.id) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div style="display:flex;gap:.75rem;flex-wrap:wrap;align-items:end">
+<div class="fg" style="flex:1;min-width:120px;margin-bottom:0">
+<label class="fl">Pick Winner</label>
+<select name="predicted_winner_id" class="fs" required>
+<option value="">-- Select --</option>
+<option value="{{ m.p1_id }}">{{ m.p1.name() }}</option>
+<option value="{{ m.p2_id }}">{{ m.p2.name() }}</option>
+</select>
+</div>
+<div class="fg" style="flex:1;min-width:100px;margin-bottom:0">
+<label class="fl">Wager (1-500 🪙)</label>
+<input type="number" name="amount" class="fi" min="1" max="500" value="10" required>
+</div>
+<button type="submit" class="btn btn-p btn-sm" style="white-space:nowrap"><i class="fas fa-coins"></i> Place Bet</button>
+</div>
+</form>
+{% endif %}
+</div>
+{% endif %}
+
+{% if pred_data is not none %}
+<div class="card" style="margin-bottom:1.5rem">
+<h3 style="font-weight:700;margin-bottom:1rem"><i class="fas fa-chart-bar" style="color:var(--acc)"></i> Predictions</h3>
+{% if pred_data.total > 0 %}
+<div style="margin-bottom:.75rem">
+<div style="display:flex;justify-content:space-between;font-size:.85rem;font-weight:600;margin-bottom:.4rem">
+<span style="color:var(--acc)">{{ m.p1.name() }} {{ pred_data.p1_pct }}%</span>
+<span style="color:var(--tm)">{{ pred_data.total }} vote{{ 's' if pred_data.total != 1 else '' }}</span>
+<span style="color:var(--ok)">{{ pred_data.p2_pct }}% {{ m.p2.name() }}</span>
+</div>
+<div style="display:flex;height:28px;border-radius:8px;overflow:hidden;background:var(--bg3)">
+{% if pred_data.p1_pct > 0 %}<div style="width:{{ pred_data.p1_pct }}%;background:var(--acc);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:#fff;min-width:24px;transition:width .3s">{{ pred_data.p1_count }}</div>{% endif %}
+{% if pred_data.p2_pct > 0 %}<div style="width:{{ pred_data.p2_pct }}%;background:var(--ok);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:#fff;min-width:24px;transition:width .3s">{{ pred_data.p2_count }}</div>{% endif %}
+</div>
+</div>
+{% else %}
+<div style="text-align:center;color:var(--tm);font-size:.85rem;margin-bottom:.75rem">No predictions yet. Be the first!</div>
+{% endif %}
+{% if pred_data.user_prediction %}
+<div style="background:var(--bg3);border-radius:10px;padding:.75rem 1rem;border-left:3px solid var(--acc)">
+<div style="font-size:.85rem;color:var(--t2)"><i class="fas fa-check-circle" style="color:var(--ok)"></i> You predicted <strong>{{ pred_data.user_prediction.predicted_winner.name() }}</strong>{% if pred_data.user_prediction.correct is not none %} — {% if pred_data.user_prediction.correct %}<span style="color:var(--ok)">Correct! +5 🪙</span>{% else %}<span style="color:var(--err)">Incorrect</span>{% endif %}{% endif %}</div>
+</div>
+{% elif current_user.is_authenticated and m.state in ('pending','accepted') %}
+<form method="POST" action="{{ url_for('matches.predict_match',mid=m.id) }}" style="margin-top:.5rem">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div style="font-size:.82rem;color:var(--tm);margin-bottom:.5rem">Who will win?</div>
+<div style="display:flex;gap:.5rem;flex-wrap:wrap">
+<button type="submit" name="predicted_winner_id" value="{{ m.p1_id }}" class="btn btn-s btn-sm" style="flex:1"><i class="fas fa-hand-point-right"></i> {{ m.p1.name() }}</button>
+<button type="submit" name="predicted_winner_id" value="{{ m.p2_id }}" class="btn btn-s btn-sm" style="flex:1"><i class="fas fa-hand-point-left"></i> {{ m.p2.name() }}</button>
+</div>
+</form>
+{% endif %}
+</div>
+{% endif %}
+
+{% if m.tourney_id %}
+<div class="card" style="margin-top:1rem">
+<div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
+{% if m.tournament.logo %}<img src="{{ url_for('static',filename='uploads/'+m.tournament.logo) }}" style="width:36px;height:36px;border-radius:8px;object-fit:cover;border:1px solid var(--bdr)">{% endif %}
+<div style="flex:1">
+<div style="font-size:.9rem;font-weight:600"><i class="fas fa-trophy" style="color:{{ m.tournament.color_primary or 'var(--acc)' }};margin-right:.3rem"></i> <a href="{{ url_for('tournaments.t_view',tid=m.tourney_id) }}">{{ m.tournament.name }}</a></div>
+<div style="font-size:.8rem;color:var(--tm)">{% if m.round_num is not none %}{{ m.tournament.round_name(m.round_num) }} · {% endif %}{{ m.tournament.game or 'General' }} · {{ m.tournament.fmt|replace('_',' ')|title }}</div>
+</div>
+<a href="{{ url_for('tournaments.t_view',tid=m.tourney_id,tab='matches') }}" class="btn btn-s btn-sm"><i class="fas fa-arrow-left"></i> Tournament</a>
+</div>
+</div>
+{% endif %}
+
+{% if endorse_data is not none and m.state == 'verified' %}
+<div class="card" style="margin-bottom:1.5rem">
+<h3 style="font-weight:700;margin-bottom:1rem"><i class="fas fa-star" style="color:var(--acc)"></i> Endorse Opponent</h3>
+{% if current_user.is_authenticated and current_user.id in (m.p1_id, m.p2_id) and not endorse_data.user_endorsed %}
+{% set opponent = m.p2 if current_user.id == m.p1_id else m.p1 %}
+<div style="font-size:.85rem;color:var(--tm);margin-bottom:.75rem">Recognize <strong>{{ opponent.name() }}</strong> for their play:</div>
+<form method="POST" action="{{ url_for('matches.endorse_opponent',mid=m.id) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div style="display:flex;gap:.5rem;flex-wrap:wrap">
+{% for cat in endorsement_categories %}
+<button type="submit" name="category" value="{{ cat }}" class="btn btn-s btn-sm" style="flex:1;min-width:120px"><i class="fas fa-thumbs-up"></i> {{ cat }}</button>
+{% endfor %}
+</div>
+</form>
+{% elif current_user.is_authenticated and current_user.id in (m.p1_id, m.p2_id) and endorse_data.user_endorsed %}
+<div style="background:var(--bg3);border-radius:10px;padding:.75rem 1rem;border-left:3px solid var(--ok)">
+<div style="font-size:.85rem;color:var(--t2)"><i class="fas fa-check-circle" style="color:var(--ok)"></i> You have already endorsed your opponent for this match.</div>
+</div>
+{% else %}
+<div style="font-size:.85rem;color:var(--tm)">Only match participants can endorse after the match is completed.</div>
+{% endif %}
+</div>
+{% endif %}
+
+{% if m.state in ('accepted','verified') %}
+<div class="card" style="margin-bottom:1.5rem">
+<h3 style="font-weight:700;margin-bottom:1rem"><i class="fas fa-comments" style="color:var(--acc)"></i> Trash Talk Wall</h3>
+{% if comments %}
+{% for c in comments %}
+<div style="background:var(--bg3);border-radius:10px;padding:.75rem 1rem;margin-bottom:.5rem">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.3rem">
+<a href="{{ url_for('main.prof',u=c.author.username) }}" style="font-size:.85rem;font-weight:600;color:var(--acc)">{{ c.author.name() }}</a>
+<span style="font-size:.72rem;color:var(--tm)">{{ c.created_at.strftime('%b %d, %Y %H:%M') }}</span>
+</div>
+<div style="font-size:.9rem;color:var(--t2)">{{ c.content }}</div>
+</div>
+{% endfor %}
+{% if comment_total_pages > 1 %}
+<div style="display:flex;justify-content:center;gap:.5rem;margin-top:.75rem">
+{% if comment_page > 1 %}<a href="{{ url_for('matches.match_view',mid=m.id,comment_page=comment_page-1) }}" class="btn btn-s btn-sm"><i class="fas fa-chevron-left"></i> Prev</a>{% endif %}
+<span style="font-size:.82rem;color:var(--tm);display:flex;align-items:center">Page {{ comment_page }} of {{ comment_total_pages }}</span>
+{% if comment_page < comment_total_pages %}<a href="{{ url_for('matches.match_view',mid=m.id,comment_page=comment_page+1) }}" class="btn btn-s btn-sm">Next <i class="fas fa-chevron-right"></i></a>{% endif %}
+</div>
+{% endif %}
+{% else %}
+<div style="text-align:center;color:var(--tm);font-size:.85rem">No comments yet. Be the first to talk trash!</div>
+{% endif %}
+{% if m.state == 'accepted' and current_user.is_authenticated %}
+<form method="POST" action="{{ url_for('matches.post_match_comment',mid=m.id) }}" style="margin-top:1rem">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div class="fg" style="margin-bottom:.5rem"><textarea name="content" class="ft" style="min-height:60px" maxlength="280" placeholder="Drop some trash talk... (280 chars max)" required></textarea></div>
+<button type="submit" class="btn btn-p btn-sm"><i class="fas fa-paper-plane"></i> Post Comment</button>
+</form>
+{% endif %}
+</div>
+{% endif %}
+
+</div>
+{% endblock %}{% block js %}
+<script>
+function react(mid,emoji){
+var csrfEl=document.querySelector('[name=csrf_token]');
+var csrf=csrfEl?csrfEl.value:'';
+fetch('/api/match/'+mid+'/react',{
+method:'POST',
+headers:{'Content-Type':'application/json','X-CSRFToken':csrf},
+body:JSON.stringify({emoji:emoji})
+}).then(function(r){return r.json()}).then(function(d){
+if(d.ok) updateReactionUI(mid,d.counts,d.my_emoji);
+}).catch(function(){});
+}
+function updateReactionUI(mid,counts,myEmoji){
+document.querySelectorAll('#react-btns-'+mid+' .react-btn').forEach(function(b){
+var e=b.getAttribute('data-emoji');
+var cnt=b.querySelector('.react-count');
+var c=counts[e]||0;
+cnt.textContent=c>0?c:'';
+if(myEmoji===e){
+b.style.borderColor='var(--acc)';
+b.style.background='var(--accs)';
+b.style.transform='scale(1.05)';
+}else{
+b.style.borderColor='';
+b.style.background='';
+b.style.transform='';
+}
+});
+}
+function loadReactions(mid){
+fetch('/api/match/'+mid+'/reactions').then(function(r){return r.json()}).then(function(d){
+updateReactionUI(mid,d.counts,d.my_emoji);
+}).catch(function(){});
+}
+loadReactions({{ m.id }});
+</script>
+{% endblock %}

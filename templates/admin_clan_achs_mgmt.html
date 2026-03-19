@@ -1,0 +1,81 @@
+{% extends "base.html" %}{% block title %}Clan Achievements{% endblock %}{% block body %}<h2 class="pt" style="margin-bottom:1.5rem"><i class="fas fa-shield-halved" style="color:var(--acc);margin-right:.4rem"></i> Clan Achievements</h2>
+
+<div class="card" style="padding:1.5rem;margin-bottom:1.5rem">
+<h3 style="font-weight:700;margin-bottom:1rem"><i class="fas fa-plus" style="color:var(--acc);margin-right:.4rem"></i> Award Clan Achievement</h3>
+<form method="POST" action="{{ url_for('admin.adm_clan_ach_create') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem">
+<div class="fg"><label class="fl">Clan</label><select name="clan_id" class="fs" required>{% for c in clans %}<option value="{{ c.id }}">[{{ c.tag }}] {{ c.name }}</option>{% endfor %}</select></div>
+<div class="fg"><label class="fl">Achievement Type</label><select name="achievement_type" class="fs" required>
+<optgroup label="Predefined">
+{% for key, info in registry.items() if key in ['score_1000','score_5000','score_10000','war_veterans','elite_squad'] %}
+<option value="{{ key }}"><i class="{{ info.icon }}"></i> {{ info.name }}</option>
+{% endfor %}
+</optgroup>
+{% if custom_types %}
+<optgroup label="Custom">
+{% for ct in custom_types %}<option value="{{ ct.key }}">{{ ct.name }}</option>{% endfor %}
+</optgroup>
+{% endif %}
+</select></div>
+</div>
+<button type="submit" class="btn btn-p" style="margin-top:.5rem"><i class="fas fa-plus"></i> Award</button>
+</form></div>
+
+<div class="card" style="padding:1.5rem;margin-bottom:1.5rem">
+<h3 style="font-weight:700;margin-bottom:1rem"><i class="fas fa-wand-magic-sparkles" style="color:var(--acc);margin-right:.4rem"></i> Custom Achievement Types ({{ custom_types|length }})</h3>
+<form method="POST" action="{{ url_for('admin.adm_custom_clan_ach_type_create') }}" enctype="multipart/form-data" style="margin-bottom:1rem"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.75rem">
+<div class="fg"><label class="fl">Key (slug)</label><input type="text" name="key" class="fs" required maxlength="64" placeholder="e.g. best_vibes"></div>
+<div class="fg"><label class="fl">Name</label><input type="text" name="name" class="fs" required maxlength="128" placeholder="Best Vibes"></div>
+<div class="fg"><label class="fl">Icon Class</label><input type="text" name="icon" class="fs" maxlength="64" placeholder="fas fa-award" value="fas fa-award"></div>
+<div class="fg"><label class="fl">Description</label><input type="text" name="description" class="fs" maxlength="256" placeholder="Optional description"></div>
+<div class="fg"><label class="fl">Image (optional)</label><input type="file" name="image" class="fs" accept="image/*"></div>
+</div>
+<button type="submit" class="btn btn-p" style="margin-top:.5rem"><i class="fas fa-plus"></i> Create Type</button>
+</form>
+{% if custom_types %}
+<table class="dt"><thead><tr><th>Key</th><th>Name</th><th>Icon / Image</th><th>Description</th><th>Used</th><th></th></tr></thead><tbody>
+{% for ct in custom_types %}
+{% set usage = [] %}
+{% for a in achs if a.achievement_type == ct.key %}{% if usage.append(1) %}{% endif %}{% endfor %}
+<tr>
+<td><code>{{ ct.key }}</code></td>
+<td>{{ ct.name }}</td>
+<td>{% if ct.image %}<img src="{{ url_for('static',filename='uploads/' + ct.image) }}" alt="{{ ct.name }}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;vertical-align:middle">{% else %}<i class="{{ ct.icon }}"></i>{% endif %} <span style="font-size:.8rem;color:var(--tm)">{{ ct.icon }}</span></td>
+<td style="font-size:.85rem;color:var(--tm)">{{ ct.description or '—' }}</td>
+<td>{{ usage|length }}</td>
+<td style="white-space:nowrap">
+<button class="btn btn-s btn-sm" onclick="document.getElementById('edit-ct-{{ ct.id }}').style.display=document.getElementById('edit-ct-{{ ct.id }}').style.display==='none'?'table-row':'none'" title="Edit"><i class="fas fa-pen"></i></button>
+<form method="POST" action="{{ url_for('admin.adm_custom_clan_ach_type_del',tid=ct.id) }}" style="display:inline;margin:0"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-d btn-sm" onclick="return confirm('Delete custom type \'{{ ct.name }}\'?{% if usage|length %} {{ usage|length }} clan(s) still use this type.{% endif %}')" title="Delete"><i class="fas fa-trash"></i></button></form>
+</td>
+</tr>
+<tr id="edit-ct-{{ ct.id }}" style="display:none;background:var(--bg2,#1a1a2e)">
+<td colspan="6">
+<form method="POST" action="{{ url_for('admin.adm_custom_clan_ach_type_edit',tid=ct.id) }}" enctype="multipart/form-data" style="display:flex;gap:.5rem;align-items:flex-end;flex-wrap:wrap;padding:.5rem 0"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div class="fg" style="flex:1;min-width:120px"><label class="fl">Name</label><input type="text" name="name" class="fs" required value="{{ ct.name }}"></div>
+<div class="fg" style="flex:1;min-width:120px"><label class="fl">Icon</label><input type="text" name="icon" class="fs" required value="{{ ct.icon }}"></div>
+<div class="fg" style="flex:2;min-width:160px"><label class="fl">Description</label><input type="text" name="description" class="fs" value="{{ ct.description }}"></div>
+<div class="fg" style="flex:1;min-width:140px"><label class="fl">Image</label><input type="file" name="image" class="fs" accept="image/*">{% if ct.image %}<label style="font-size:.8rem;color:var(--tm);margin-top:.25rem"><input type="checkbox" name="remove_image" value="1"> Remove current image</label>{% endif %}</div>
+<button type="submit" class="btn btn-p btn-sm"><i class="fas fa-save"></i> Save</button>
+</form>
+</td>
+</tr>
+{% endfor %}</tbody></table>
+{% else %}<p style="color:var(--tm);text-align:center;padding:1rem">No custom achievement types yet.</p>{% endif %}
+</div>
+
+<div class="card" style="padding:1.5rem">
+<h3 style="font-weight:700;margin-bottom:1rem">All Clan Achievements ({{ achs|length }})</h3>
+{% if achs %}
+<table class="dt"><thead><tr><th>ID</th><th>Clan</th><th>Achievement</th><th>Awarded</th><th></th></tr></thead><tbody>
+{% for a in achs %}
+{% set info = registry.get(a.achievement_type, {}) %}
+<tr>
+<td>{{ a.id }}</td>
+<td>[{{ a.clan.tag }}] {{ a.clan.name }}</td>
+<td>{% if info.get('image') %}<img src="{{ url_for('static',filename='uploads/' + info.image) }}" alt="" style="width:22px;height:22px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:.3rem">{% else %}<i class="{{ info.get('icon','fas fa-award') }}" style="margin-right:.3rem"></i>{% endif %} <span class="b b-m">{{ info.get('name', a.achievement_type) }}</span></td>
+<td style="font-size:.82rem;color:var(--tm)">{{ a.awarded_at.strftime('%Y-%m-%d %H:%M') }}</td>
+<td><form method="POST" action="{{ url_for('admin.adm_clan_ach_del',caid=a.id) }}" style="margin:0"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-d btn-sm" onclick="return confirm('Delete this clan achievement?')" title="Delete"><i class="fas fa-trash"></i></button></form></td>
+</tr>{% endfor %}</tbody></table>
+{% else %}<p style="color:var(--tm);text-align:center;padding:2rem">No clan achievements found.</p>{% endif %}
+</div>{% endblock %}

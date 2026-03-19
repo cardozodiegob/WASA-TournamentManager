@@ -1,0 +1,17 @@
+{% extends "base.html" %}{% block title %}Manage Tournaments{% endblock %}{% block body %}
+<div class="ph"><div><h2 class="pt">Manage Tournaments</h2><p class="ps">{{ ts|length }} tournaments</p></div><a href="{{ url_for('tournaments.t_new') }}" class="btn btn-p btn-sm"><i class="fas fa-plus"></i> New</a></div>
+<div class="card"><table class="dt"><thead><tr><th>ID</th><th>Name</th><th>Game</th><th>Players</th><th>Status</th><th>Seeding</th><th>Bracket</th><th></th></tr></thead><tbody>
+{% for tr in ts %}<tr>
+<td>{{ tr.id }}</td>
+<td><a href="{{ url_for('tournaments.t_view',tid=tr.id) }}">{{ tr.name }}</a></td>
+<td>{{ tr.game or '–' }}</td>
+<td>{{ tr.player_count }}/{{ tr.max_players }}</td>
+<td><span class="b {% if tr.status=='upcoming' %}b-i{% elif tr.status=='active' %}b-s{% elif tr.status=='completed' %}b-m{% else %}b-d{% endif %}">{{ tr.status|title }}</span></td>
+<td><span class="b b-m">{{ tr.seeding_mode or 'elo' }}</span></td>
+<td>{% if tr.bracket_generated %}<span class="b b-s">Yes (R{{ tr.current_round }})</span>{% else %}<span class="b b-m">No</span>{% endif %}</td>
+<td style="display:flex;gap:.25rem">
+<a href="{{ url_for('admin.adm_tourney_edit',tid=tr.id) }}" class="btn btn-s btn-sm"><i class="fas fa-pen"></i></a>
+<form method="POST" action="{{ url_for('admin.adm_tourney_del',tid=tr.id) }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-d btn-sm" onclick="return confirm('Delete {{ tr.name }}? All matches will be removed.')"><i class="fas fa-trash"></i></button></form>
+</td></tr>{% endfor %}</tbody></table>
+{% if not ts %}<div class="empty"><p>No tournaments.</p></div>{% endif %}
+</div>{% endblock %}

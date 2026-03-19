@@ -1,0 +1,49 @@
+{% extends "base.html" %}{% block title %}MVP Voting{% endblock %}{% block css %}
+<style>
+.mvp-section{margin-bottom:2rem}
+.mvp-section h3{font-size:1.1rem;margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem}
+.mvp-standings{width:100%;border-collapse:collapse}
+.mvp-standings th,.mvp-standings td{padding:.5rem .75rem;text-align:left;border-bottom:1px solid var(--bdr)}
+.mvp-standings th{font-size:.75rem;text-transform:uppercase;color:var(--t2);font-weight:600}
+.mvp-standings tr:first-child td{font-weight:700;color:var(--acc)}
+.mvp-vote-form{margin-top:.75rem;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+.mvp-vote-form select{padding:.4rem .6rem;border-radius:8px;border:1px solid var(--bdr);background:var(--c2);color:var(--t1);font-size:.85rem}
+.mvp-badge{display:inline-block;padding:.15rem .5rem;border-radius:6px;font-size:.72rem;font-weight:600}
+.mvp-badge-w{background:rgba(59,130,246,.15);color:var(--acc)}
+.mvp-badge-m{background:rgba(168,85,247,.15);color:#a855f7}
+.mvp-winner-card{display:flex;align-items:center;gap:.75rem;padding:.6rem .75rem;border-bottom:1px solid var(--bdr)}
+.mvp-winner-card:last-child{border-bottom:none}
+</style>{% endblock %}{% block body %}
+<div class="ph"><div><h2 class="pt"><i class="fas fa-trophy"></i> MVP Voting</h2><p class="ps">Vote for the most valuable player</p></div></div>
+<div class="mvp-section"><h3><i class="fas fa-calendar-week" style="color:var(--acc)"></i> Weekly MVP <span class="mvp-badge mvp-badge-w">{{ weekly_key }}</span></h3>
+<div class="card" style="padding:1rem">
+{% if weekly_standings %}<table class="mvp-standings"><thead><tr><th>#</th><th>Player</th><th>Votes</th></tr></thead><tbody>
+{% for s in weekly_standings %}<tr><td>{{ loop.index }}</td><td><a href="{{ url_for('main.prof',u=s.user.username) }}">{{ s.user.name() }}</a></td><td>{{ s.votes }}</td></tr>{% endfor %}
+</tbody></table>{% else %}<p style="color:var(--t2);font-size:.88rem">No votes cast yet this week.</p>{% endif %}
+{% if current_user.is_authenticated %}{% if weekly_voted %}<p style="margin-top:.75rem;font-size:.85rem;color:var(--t2)"><i class="fas fa-check-circle" style="color:var(--ok)"></i> You voted for <strong>{{ weekly_voted.name() }}</strong> this week.</p>
+{% else %}<form class="mvp-vote-form" method="post" action="{{ url_for('social.mvp_vote') }}">
+<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}"><input type="hidden" name="period_type" value="weekly">
+<select name="candidate_id" required><option value="">Select a player...</option>{% for u in users %}{% if u.id != current_user.id %}<option value="{{ u.id }}">{{ u.name() }}</option>{% endif %}{% endfor %}</select>
+<button type="submit" class="btn btn-p btn-sm"><i class="fas fa-vote-yea"></i> Vote</button></form>{% endif %}{% endif %}
+</div></div>
+<div class="mvp-section"><h3><i class="fas fa-calendar-alt" style="color:#a855f7"></i> Monthly MVP <span class="mvp-badge mvp-badge-m">{{ monthly_key }}</span></h3>
+<div class="card" style="padding:1rem">
+{% if monthly_standings %}<table class="mvp-standings"><thead><tr><th>#</th><th>Player</th><th>Votes</th></tr></thead><tbody>
+{% for s in monthly_standings %}<tr><td>{{ loop.index }}</td><td><a href="{{ url_for('main.prof',u=s.user.username) }}">{{ s.user.name() }}</a></td><td>{{ s.votes }}</td></tr>{% endfor %}
+</tbody></table>{% else %}<p style="color:var(--t2);font-size:.88rem">No votes cast yet this month.</p>{% endif %}
+{% if current_user.is_authenticated %}{% if monthly_voted %}<p style="margin-top:.75rem;font-size:.85rem;color:var(--t2)"><i class="fas fa-check-circle" style="color:var(--ok)"></i> You voted for <strong>{{ monthly_voted.name() }}</strong> this month.</p>
+{% else %}<form class="mvp-vote-form" method="post" action="{{ url_for('social.mvp_vote') }}">
+<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}"><input type="hidden" name="period_type" value="monthly">
+<select name="candidate_id" required><option value="">Select a player...</option>{% for u in users %}{% if u.id != current_user.id %}<option value="{{ u.id }}">{{ u.name() }}</option>{% endif %}{% endfor %}</select>
+<button type="submit" class="btn btn-p btn-sm"><i class="fas fa-vote-yea"></i> Vote</button></form>{% endif %}{% endif %}
+</div></div>
+{% if past_winners %}<div class="mvp-section"><h3><i class="fas fa-medal" style="color:var(--warn)"></i> Past MVP Winners</h3>
+<div class="card" style="padding:.5rem .75rem">
+{% for w in past_winners %}<div class="mvp-winner-card">
+<span class="mvp-badge {% if 'Weekly' in w.reason %}mvp-badge-w{% else %}mvp-badge-m{% endif %}">{% if 'Weekly' in w.reason %}Weekly{% else %}Monthly{% endif %}</span>
+<a href="{{ url_for('main.prof',u=w.user.username) }}" style="font-weight:600">{{ w.user.name() }}</a>
+<span style="color:var(--t2);font-size:.8rem;margin-left:auto">{{ w.reason.split('(')[1].split(')')[0] if '(' in w.reason else '' }}</span>
+<span style="color:var(--ok);font-size:.8rem;font-weight:600">+{{ w.amount }} 🪙</span>
+</div>{% endfor %}
+</div></div>{% endif %}
+{% endblock %}

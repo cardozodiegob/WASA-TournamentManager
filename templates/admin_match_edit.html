@@ -1,0 +1,14 @@
+{% extends "base.html" %}{% block title %}Edit Match{% endblock %}{% block body %}<div style="max-width:600px;margin:0 auto"><h2 class="pt" style="margin-bottom:1.5rem">Edit Match #{{ m.id }}</h2>
+
+{% if m.sets.count() > 0 %}
+<div class="card" style="padding:2rem;margin-bottom:1.5rem">
+<h3 style="font-weight:700;margin-bottom:1rem"><i class="fas fa-table-tennis-paddle-ball" style="color:var(--acc);margin-right:.4rem"></i> Set Scores</h3>
+<table class="dt" style="font-size:.9rem"><thead><tr><th>Set</th><th>{{ m.p1.name() }}</th><th>{{ m.p2.name() }}</th><th>Winner</th></tr></thead><tbody>
+{% for s in m.sets.all() %}<tr><td style="font-weight:700">{{ s.set_number }}</td><td>{{ s.p1_points }}</td><td>{{ s.p2_points }}</td><td>{% if s.winner %}{{ s.winner.name() }}{% else %}–{% endif %}</td></tr>{% endfor %}
+<tr style="font-weight:700;border-top:2px solid var(--bdr)"><td>Total</td><td>{{ m.p1_total_points }}</td><td>{{ m.p2_total_points }}</td><td></td></tr>
+</tbody></table>
+</div>
+{% endif %}
+
+<div class="card" style="padding:2rem"><form method="POST"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem"><div class="fg"><label class="fl">{{ m.p1.name() }}</label><input type="number" name="p1_score" class="fi" value="{{ m.p1_score }}" min="0"></div><div class="fg"><label class="fl">{{ m.p2.name() }}</label><input type="number" name="p2_score" class="fi" value="{{ m.p2_score }}" min="0"></div></div><div class="fg" style="display:flex;gap:1.5rem"><div style="display:flex;align-items:center;gap:.5rem"><input type="checkbox" name="draw" {% if m.draw %}checked{% endif %}> <label>Draw</label></div><div style="display:flex;align-items:center;gap:.5rem"><input type="checkbox" name="ranked" {% if m.ranked %}checked{% endif %}> <label>Ranked</label></div></div><div class="fg"><label class="fl">State</label><select name="state" class="fs"><option value="scheduled" {% if m.state=='scheduled' %}selected{% endif %}>Scheduled</option><option value="pending" {% if m.state=='pending' %}selected{% endif %}>Pending</option><option value="verified" {% if m.state=='verified' %}selected{% endif %}>Verified</option><option value="disputed" {% if m.state=='disputed' %}selected{% endif %}>Disputed</option><option value="rejected" {% if m.state=='rejected' %}selected{% endif %}>Rejected</option></select></div><div class="fg"><label class="fl">Notes</label><textarea name="notes" class="ft" style="min-height:60px">{{ m.notes or '' }}</textarea></div><div class="fg"><label class="fl">Winner Comment</label><textarea name="winner_comment" class="ft" style="min-height:60px">{{ m.winner_comment or '' }}</textarea></div><button type="submit"
+ class="btn btn-p btn-bl"><i class="fas fa-save"></i> Save</button></form></div></div>{% endblock %}

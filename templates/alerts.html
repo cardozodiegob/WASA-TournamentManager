@@ -1,0 +1,19 @@
+{% extends "base.html" %}{% block title %}Alerts{% endblock %}{% block body %}
+<div class="ph"><div><h2 class="pt">Alerts</h2><p class="ps">{{ uc }} unread</p></div>
+<div style="display:flex;gap:.5rem">{% if uc > 0 %}<form method="POST" action="{{ url_for('main.read_all') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-s btn-sm"><i class="fas fa-check-double"></i> Read All</button></form>{% endif %}</div></div>
+<div class="tabs">
+<a href="{{ url_for('main.my_alerts',tab='unread') }}" class="tab {% if atab=='unread' %}on{% endif %}"><i class="fas fa-bell"></i> Unread ({{ uc }})</a>
+<a href="{{ url_for('main.my_alerts',tab='read') }}" class="tab {% if atab=='read' %}on{% endif %}"><i class="fas fa-bell-slash"></i> Read</a>
+<a href="{{ url_for('main.my_alerts',tab='all') }}" class="tab {% if atab=='all' %}on{% endif %}"><i class="fas fa-list"></i> All</a>
+</div>
+{% if als %}<div style="display:flex;flex-direction:column;gap:.75rem">{% for a in als %}
+<div class="card" style="{% if not a.read %}border-left:3px solid var(--acc);{% endif %}padding:1rem;display:flex;align-items:center;gap:1rem">
+<i class="fas fa-{{ 'circle-info' if a.cat=='info' else 'circle-check' if a.cat=='success' else 'triangle-exclamation' if a.cat=='warning' else 'circle-xmark' }}" style="color:var(--a{{ a.cat[0] }}-t)"></i>
+<div style="flex:1"><div style="font-weight:600">{{ a.title }}{% if not a.read %} <span class="b b-i" style="font-size:.6rem;margin-left:.3rem">NEW</span>{% endif %}</div><div style="color:var(--t2);font-size:.88rem">{{ a.message }}</div><div style="color:var(--tm);font-size:.75rem;margin-top:.25rem">{{ a.created_at.strftime('%b %d, %Y %H:%M') }}</div></div>
+<div style="display:flex;gap:.35rem;align-items:center">
+{% if a.link %}<a href="{{ a.link }}" class="btn btn-s btn-sm">View</a>{% endif %}
+{% if not a.read %}<form method="POST" action="{{ url_for('main.dismiss_alert',aid=a.id) }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-s" title="Mark read"><i class="fas fa-check"></i></button></form>{% endif %}
+</div></div>
+{% endfor %}</div>{% else %}<div class="empty"><i class="fas fa-bell-slash"></i><p>{% if atab=='unread' %}No unread alerts!{% elif atab=='read' %}No read alerts.{% else %}No alerts.{% endif %}</p></div>{% endif %}
+{% if tp > 1 %}<div style="display:flex;justify-content:center;gap:.5rem;margin-top:1.5rem">{% if pg > 1 %}<a href="{{ url_for('main.my_alerts',tab=atab,page=pg-1) }}" class="btn btn-s btn-sm">&laquo; Prev</a>{% endif %}<span style="padding:.4rem .8rem;color:var(--t2)">Page {{ pg }} / {{ tp }}</span>{% if pg < tp %}<a href="{{ url_for('main.my_alerts',tab=atab,page=pg+1) }}" class="btn btn-s btn-sm">Next &raquo;</a>{% endif %}</div>{% endif %}
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends "base.html" %}{% block title %}Submit Result{% endblock %}{% block body %}<div style="max-width:500px;margin:0 auto"><h2 class="pt" style="margin-bottom:1.5rem">Tournament Result</h2><p class="ps" style="margin-bottom:.5rem">{{ tourney.name }} – {{ tourney.round_name(match.round_num) }}</p><p style="color:var(--t2);margin-bottom:1.5rem">{{ match.p1.name() }} vs {{ match.p2.name() }}</p>
+
+<div class="card" style="padding:2rem;margin-bottom:1.5rem">
+<h3 style="font-weight:700;margin-bottom:1rem">Submit Scores</h3>
+<form method="POST" enctype="multipart/form-data"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="submit_type" value="normal">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem"><div class="fg"><label class="fl">{{ match.p1.name() }}</label><input type="number" name="p1_score" class="fi" min="0" required value="0"></div><div class="fg"><label class="fl">{{ match.p2.name() }}</label><input type="number" name="p2_score" class="fi" min="0" required value="0"></div></div>
+<div class="fg"><label class="fl">Date Played</label><input type="datetime-local" name="played_at" class="fi" value="{{ now_utc }}"></div>
+<div class="fg"><label class="fl">Winner Comment / Notes</label><textarea name="notes" class="ft" style="min-height:60px" placeholder="Leave a comment about the match"></textarea></div>
+<div class="fg"><label class="fl">Screenshot/Proof (optional)</label><input type="file" name="proof" class="fi" accept="image/*"></div>
+
+<div style="margin-bottom:1rem">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
+<label class="fl" style="margin-bottom:0"><i class="fas fa-table-tennis-paddle-ball"></i> Set Scores (optional)</label>
+<button type="button" id="addSetBtn" class="btn btn-s btn-sm"><i class="fas fa-plus"></i> Add Set</button>
+</div>
+<div id="setRows"></div>
+</div>
+
+<button type="submit" class="btn btn-p btn-bl"><i class="fas fa-paper-plane"></i> Submit Result</button>
+</form></div>
+
+<div class="card" style="padding:2rem;border-left:3px solid var(--warn)">
+<h3 style="font-weight:700;margin-bottom:.5rem;color:var(--warn)"><i class="fas fa-user-clock"></i> Opponent No-Show?</h3>
+<p style="font-size:.85rem;color:var(--t2);margin-bottom:1rem">If your opponent didn't show up, report it here. This will be reviewed by an admin before the result is finalized.</p>
+<form method="POST"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="submit_type" value="noshow">
+<div class="fg"><label class="fl">Reason / Details</label><textarea name="noshow_reason" class="ft" style="min-height:60px" placeholder="e.g. Waited 15 minutes, opponent never joined the lobby" required></textarea></div>
+<button type="submit" class="btn btn-w btn-bl" onclick="return confirm('Report {{ opp.name() }} as no-show? An admin will review this.')"><i class="fas fa-user-clock"></i> Report No-Show</button>
+</form></div>
+
+</div>{% endblock %}{% block js %}
+<script>
+(function(){
+var cnt=0,max=7,rows=document.getElementById('setRows'),btn=document.getElementById('addSetBtn');
+btn.addEventListener('click',function(){
+if(cnt>=max)return;
+cnt++;
+var d=document.createElement('div');
+d.style.cssText='display:flex;gap:.5rem;align-items:center;margin-bottom:.5rem';
+d.innerHTML='<span style="font-weight:600;min-width:50px;font-size:.85rem">Set '+cnt+'</span>'+
+'<input type="number" name="set_p1_points[]" class="fi" min="0" value="0" style="flex:1" placeholder="{{ match.p1.name() }}">'+
+'<input type="number" name="set_p2_points[]" class="fi" min="0" value="0" style="flex:1" placeholder="{{ match.p2.name() }}">'+
+'<button type="button" class="btn btn-d btn-sm" style="padding:.3rem .5rem" onclick="this.parentNode.remove();renum()">✕</button>';
+rows.appendChild(d);
+if(cnt>=max)btn.disabled=true;
+});
+window.renum=function(){
+var ch=rows.children;cnt=ch.length;
+for(var i=0;i<ch.length;i++)ch[i].querySelector('span').textContent='Set '+(i+1);
+btn.disabled=cnt>=max;
+};
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}{% block title %}Matches{% endblock %}{% block body %}
+
+{% if upcoming %}
+<div class="ph"><div><h2 class="pt"><i class="fas fa-calendar-alt" style="color:var(--acc)"></i> Upcoming Matches</h2><p class="ps">Open for betting and predictions</p></div></div>
+<div class="cg" style="margin-bottom:2rem">{% for m in upcoming %}<a href="{{ url_for('matches.match_view',mid=m.id) }}" class="ncl"><div class="card" style="border-left:3px solid var(--acc)">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+<span class="b {% if m.state=='scheduled' %}b-i{% else %}b-w{% endif %}">{{ m.state|title }}</span>
+{% if m.ranked %}<span class="b b-a">Ranked</span>{% endif %}
+{% if m.tourney_id %}<span class="b b-i">Tournament</span>{% endif %}
+{% if m.stake %}<span class="b b-w">🪙 {{ m.stake }}</span>{% endif %}
+</div>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem">
+<div style="text-align:center;flex:1"><span style="font-weight:600">{{ m.p1.name() }}</span></div>
+<div style="font-size:1.1rem;font-weight:800;color:var(--acc)">vs</div>
+<div style="text-align:center;flex:1"><span style="font-weight:600">{{ m.p2.name() }}</span></div>
+</div>
+{% if m.scheduled_at %}<div style="font-size:.78rem;color:var(--tm);margin-top:.4rem;text-align:center"><i class="far fa-clock"></i> {{ m.scheduled_at.strftime('%b %d, %Y %H:%M') }}</div>{% endif %}
+{% if m.series_format and m.series_format != 'bo1' %}<div style="font-size:.75rem;color:var(--tm);text-align:center;margin-top:.2rem">{{ m.series_format|upper }}</div>{% endif %}
+</div></a>{% endfor %}</div>
+{% endif %}
+
+<div class="ph"><div><h2 class="pt">Match History</h2><p class="ps">All verified matches{% if current_user.is_authenticated %} + your pending{% endif %}</p></div></div>
+<div class="card" style="overflow-x:auto"><table class="dt"><thead><tr><th>Date</th><th>P1</th><th>Score</th><th>P2</th><th>Type</th><th>Status</th><th>ELO Δ</th><th></th></tr></thead><tbody>
+{% for m in ms %}<tr>
+<td style="color:var(--tm);font-size:.82rem">{{ m.played_at.strftime('%b %d, %Y') }}</td>
+<td style="{% if m.winner_id==m.p1_id %}font-weight:700;color:var(--ok){% endif %}"><a href="{{ url_for('main.prof',u=m.p1.username) }}">{% if m.p1.country %}{{ country_flags.get(m.p1.country,'') }} {% endif %}{{ m.p1.name() }}</a></td>
+<td style="font-weight:600">{{ m.p1_score }}–{{ m.p2_score }}</td>
+<td style="{% if m.winner_id==m.p2_id %}font-weight:700;color:var(--ok){% endif %}"><a href="{{ url_for('main.prof',u=m.p2.username) }}">{% if m.p2.country %}{{ country_flags.get(m.p2.country,'') }} {% endif %}{{ m.p2.name() }}</a></td>
+<td><span class="b {% if m.ranked %}b-a{% else %}b-m{% endif %}">{{ 'R' if m.ranked else 'U' }}</span>{% if m.tourney_id %} <span class="b b-i">T</span>{% endif %}</td>
+<td><span class="b {% if m.state=='verified' %}b-s{% elif m.state=='pending' %}b-w{% else %}b-d{% endif %}">{{ m.state|title }}</span>
+{% if m.state=='pending' and current_user.is_authenticated %}
+{% if m.submit_by==current_user.id %}<span style="font-size:.7rem;color:var(--tm);display:block">Awaiting opponent</span>
+{% elif current_user.id in [m.p1_id,m.p2_id] %}<span style="font-size:.7rem;color:var(--warn);display:block">Needs your review</span>{% endif %}
+{% endif %}</td>
+<td>{% if m.ranked and m.state=='verified' %}<span style="color:var(--ok)">+{{ m.elo_d1 if m.elo_d1>0 else m.elo_d2 }}</span> / <span style="color:var(--err)">{{ m.elo_d2 if m.elo_d1>0 else m.elo_d1 }}</span>{% elif m.state=='pending' %}<span style="color:var(--tm)">–</span>{% else %}–{% endif %}</td>
+<td style="display:flex;gap:.25rem">
+<a href="{{ url_for('matches.match_view',mid=m.id) }}" class="btn btn-s btn-sm"><i class="fas fa-eye"></i></a>
+{% if m.state=='pending' and current_user.is_authenticated and m.submit_by!=current_user.id and current_user.id in [m.p1_id,m.p2_id] %}
+<a href="{{ url_for('main.dash') }}" class="btn btn-w btn-sm"><i class="fas fa-check"></i></a>
+{% endif %}
+</td>
+</tr>{% endfor %}</tbody></table>
+{% if not ms %}<div class="empty"><i class="fas fa-gamepad"></i><p>No matches yet.</p></div>{% endif %}
+</div>
+{% if tp > 1 %}<div style="display:flex;justify-content:center;gap:.5rem;margin-top:1.5rem">{% for p in range(1,tp+1) %}<a href="{{ url_for('matches.match_list',page=p) }}" class="btn btn-sm {% if p==pg %}btn-p{% else %}btn-s{% endif %}">{{ p }}</a>{% endfor %}</div>{% endif %}
+{% endblock %}

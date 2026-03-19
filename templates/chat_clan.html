@@ -1,0 +1,5 @@
+{% extends "base.html" %}{% block title %}{{ clan.name }} Chat{% endblock %}{% block body %}
+<h2 class="pt"><i class="fas fa-comments"></i> [{{ clan.tag }}] {{ clan.name }} Chat</h2>
+<a href="{{ url_for('clans.clan_view', cid=clan.id) }}" class="btn btn-s btn-sm" style="margin-bottom:1rem"><i class="fas fa-arrow-left"></i> Back to Clan</a>
+{% include '_chat_widget.html' with context %}
+{% endblock %}

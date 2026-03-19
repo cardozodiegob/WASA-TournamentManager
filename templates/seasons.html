@@ -1,0 +1,30 @@
+{% extends "base.html" %}{% block title %}Seasons{% endblock %}{% block body %}
+<div class="ph"><div><h2 class="pt"><i class="fas fa-calendar-alt"></i> Seasons</h2><p class="ps">Competitive season history</p></div></div>
+
+{% if active_season %}
+<div class="card" style="margin-bottom:1.5rem;border-left:3px solid var(--ok);padding:1.5rem">
+<h3 style="font-weight:700"><span class="b b-s"><i class="fas fa-play"></i> Current</span> {{ active_season.name }}</h3>
+<div style="color:var(--t2);font-size:.88rem;margin-top:.25rem">Season #{{ active_season.number }} · Started {{ active_season.started_at.strftime('%b %d, %Y') }}</div>
+{% if active_season.notes %}<p style="color:var(--tm);font-size:.85rem;margin-top:.5rem">{{ active_season.notes }}</p>{% endif %}
+</div>
+{% endif %}
+
+{% if past_seasons %}
+<div style="display:flex;flex-direction:column;gap:.75rem">
+{% for s in past_seasons %}
+<a href="{{ url_for('seasons_bp.season_view',sid=s.id) }}" class="ncl"><div class="card" style="padding:1.25rem">
+<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem">
+<div>
+<div style="font-weight:700;font-size:1.05rem">{{ s.name }}</div>
+<div style="color:var(--tm);font-size:.82rem">Season #{{ s.number }} · {{ s.started_at.strftime('%b %d, %Y') }} → {{ s.ended_at.strftime('%b %d, %Y') if s.ended_at else 'Ongoing' }} · {{ s.archives.count() }} players</div>
+</div>
+{% set top3=s.archives.order_by(db_sa_desc).limit(3).all() if false else [] %}
+<i class="fas fa-chevron-right" style="color:var(--tm)"></i>
+</div>
+</div></a>
+{% endfor %}
+</div>
+{% else %}
+{% if not active_season %}<div class="empty"><i class="fas fa-calendar-alt"></i><p>No seasons yet.</p></div>{% endif %}
+{% endif %}
+{% endblock %}

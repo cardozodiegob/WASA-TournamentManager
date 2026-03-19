@@ -1,0 +1,41 @@
+{% extends "base.html" %}{% block title %}Point Transactions{% endblock %}{% block body %}<h2 class="pt" style="margin-bottom:1.5rem"><i class="fas fa-coins" style="color:var(--acc);margin-right:.4rem"></i> Point Transactions</h2>
+
+<div class="card" style="padding:1.5rem;margin-bottom:1.5rem">
+<h3 style="font-weight:700;margin-bottom:1rem"><i class="fas fa-sliders" style="color:var(--acc);margin-right:.4rem"></i> Manual Adjustment</h3>
+<form method="POST" action="{{ url_for('admin.adm_point_adjust') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem">
+<div class="fg"><label class="fl">User</label><select name="user_id" class="fs" required>{% for u in users %}<option value="{{ u.id }}">{{ u.username }} ({{ u.points }} pts)</option>{% endfor %}</select></div>
+<div class="fg"><label class="fl">Amount (+/-)</label><input type="number" name="amount" class="fi" required placeholder="e.g. 50 or -20"></div>
+<div class="fg"><label class="fl">Reason</label><input type="text" name="reason" class="fi" required maxlength="256" placeholder="Reason for adjustment"></div>
+</div>
+<button type="submit" class="btn btn-p" style="margin-top:.5rem" onclick="return confirm('Apply this point adjustment?')"><i class="fas fa-coins"></i> Adjust</button>
+</form></div>
+
+<div class="card" style="padding:1.5rem">
+<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1rem">
+<h3 style="font-weight:700;margin:0">Transactions ({{ pagination.total }})</h3>
+<form method="GET" style="display:flex;gap:.5rem;align-items:center">
+<input type="text" name="username" class="fi" value="{{ username }}" placeholder="Filter by username" style="max-width:200px">
+<button type="submit" class="btn btn-s btn-sm"><i class="fas fa-search"></i></button>
+{% if username %}<a href="{{ url_for('admin.adm_transactions') }}" class="btn btn-s btn-sm"><i class="fas fa-times"></i></a>{% endif %}
+</form>
+</div>
+
+{% if txns %}
+<table class="dt"><thead><tr><th>ID</th><th>User</th><th>Amount</th><th>Reason</th><th>Date</th></tr></thead><tbody>
+{% for t in txns %}<tr>
+<td>{{ t.id }}</td>
+<td>{{ t.user.username }}</td>
+<td style="font-weight:700;color:{% if t.amount >= 0 %}var(--suc){% else %}var(--err){% endif %}">{{ '%+d'|format(t.amount) }}</td>
+<td style="font-size:.85rem">{{ t.reason }}</td>
+<td style="font-size:.82rem;color:var(--tm)">{{ t.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+</tr>{% endfor %}</tbody></table>
+
+{% if pagination.pages > 1 %}
+<div style="display:flex;justify-content:center;gap:.5rem;margin-top:1rem">
+{% if pagination.has_prev %}<a href="{{ url_for('admin.adm_transactions',page=pagination.prev_num,username=username) }}" class="btn btn-s btn-sm"><i class="fas fa-chevron-left"></i></a>{% endif %}
+<span style="padding:.4rem .8rem;color:var(--tm)">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+{% if pagination.has_next %}<a href="{{ url_for('admin.adm_transactions',page=pagination.next_num,username=username) }}" class="btn btn-s btn-sm"><i class="fas fa-chevron-right"></i></a>{% endif %}
+</div>{% endif %}
+{% else %}<p style="color:var(--tm);text-align:center;padding:2rem">No transactions found.</p>{% endif %}
+</div>{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "base.html" %}{% block title %}Edit: {{ item.name }}{% endblock %}{% block body %}<div style="max-width:700px;margin:0 auto">
+<h2 class="pt" style="margin-bottom:1.5rem">Edit Cosmetic Item</h2>
+<div class="card" style="padding:2rem">
+<form method="POST" enctype="multipart/form-data"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+<div class="fg"><label class="fl">Name</label><input type="text" name="name" class="fi" value="{{ item.name }}" required maxlength="64"></div>
+<div class="fg"><label class="fl">Category</label>
+<select name="category" class="fs" required>
+{% for c in categories %}<option value="{{ c }}" {% if c == item.category %}selected{% endif %}>{{ c }}</option>{% endfor %}
+</select></div>
+<div class="fg"><label class="fl">Rarity</label>
+<select name="rarity" class="fs">
+{% for r in rarity_tiers %}<option value="{{ r }}" {% if r == item.rarity %}selected{% endif %}>{{ r|capitalize }}</option>{% endfor %}
+</select></div>
+<div class="fg"><label class="fl">Effect Type</label>
+<select name="effect_type" class="fs">
+{% for e in effect_types %}<option value="{{ e }}" {% if e == item.effect_type %}selected{% endif %}>{{ e|capitalize }}</option>{% endfor %}
+</select></div>
+<div class="fg"><label class="fl">Effect Mode</label>
+<select name="effect_mode" id="edit-effect-mode" class="fs" onchange="updateEditCssLabel()">
+{% for m in effect_modes %}<option value="{{ m }}" {% if m == (item.effect_mode or 'css') %}selected{% endif %}>{{ m }}</option>{% endfor %}
+</select></div>
+<div class="fg"><label class="fl">Price</label><input type="number" name="price" class="fi" value="{{ item.price }}" min="0"></div>
+</div>
+<div class="fg"><label class="fl">Description</label><textarea name="description" class="ft" style="min-height:80px" maxlength="256">{{ item.description or '' }}</textarea></div>
+<div class="fg"><label class="fl" id="edit-css-label">{% if item.effect_mode == 'svg_filter' %}SVG Filter XML{% elif item.effect_mode == 'canvas' %}Effect Key{% else %}CSS Data{% endif %}</label><input type="text" name="css_data" id="css-input" class="fi" value="{{ item.css_data or '' }}" maxlength="512" oninput="updatePreview()"></div>
+<div class="fg"><label class="fl">Live Preview</label>
+<div style="display:flex;align-items:center;gap:1rem">
+<div id="css-preview" style="width:60px;height:60px;border-radius:8px;background:var(--bg3);{{ item.css_data or '' }}"></div>
+<span style="font-size:.82rem;color:var(--tm)">Preview updates as you type CSS data</span>
+</div></div>
+<div class="fg"><label class="fl">Replace Image</label><input type="file" name="image" class="fi" accept="image/*">
+{% if item.image %}<div style="margin-top:.5rem"><img src="{{ url_for('static',filename='uploads/'+item.image) }}" style="width:64px;height:64px;border-radius:8px;object-fit:cover"><span style="font-size:.8rem;color:var(--tm);margin-left:.5rem">Current</span></div>{% endif %}</div>
+<div class="fg"><label style="display:flex;align-items:center;gap:.5rem;cursor:pointer"><input type="checkbox" name="active" {% if item.active %}checked{% endif %}><span>Active</span></label></div>
+<div style="display:flex;gap:.5rem">
+<button type="submit" class="btn btn-p"><i class="fas fa-save"></i> Save</button>
+<a href="{{ url_for('admin.adm_cosmetics') }}" class="btn btn-s">Cancel</a>
+</div>
+</form>
+</div></div>
+<script>
+function updatePreview(){var v=document.getElementById('css-input').value;document.getElementById('css-preview').style.cssText='width:60px;height:60px;border-radius:8px;background:var(--bg3);'+v;}
+var editCssLabels = {'css':'CSS Data','svg_filter':'SVG Filter XML','canvas':'Effect Key'};
+function updateEditCssLabel(){
+  var mode = document.getElementById('edit-effect-mode').value;
+  var lbl = document.getElementById('edit-css-label');
+  if(lbl) lbl.textContent = editCssLabels[mode] || 'CSS Data';
+}
+</script>
+{% endblock %}

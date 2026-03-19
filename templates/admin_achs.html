@@ -1,0 +1,83 @@
+{% extends "base.html" %}{% block title %}Achievements{% endblock %}{% block css %}
+<style>
+.ach-wrap{position:relative;display:inline-block}
+.ach-actions{display:none;position:absolute;top:4px;right:4px;z-index:10;flex-direction:column;gap:3px}
+.ach-wrap:hover .ach-actions{display:flex}
+.ach-btn{width:24px;height:24px;border-radius:6px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.65rem;transition:all .2s;opacity:.85}
+.ach-btn:hover{opacity:1;transform:scale(1.1)}
+.ach-btn-edit{background:var(--acc);color:#fff}
+.ach-btn-del{background:var(--err);color:#fff}
+.multi-select{display:flex;flex-wrap:wrap;gap:.35rem;max-height:200px;overflow-y:auto;padding:.5rem;background:var(--bg3);border:1px solid var(--bdr);border-radius:10px}
+.multi-select label{display:flex;align-items:center;gap:.3rem;padding:.25rem .5rem;border-radius:6px;font-size:.82rem;cursor:pointer;transition:all .15s;border:1px solid transparent}
+.multi-select label:hover{background:var(--accs);border-color:var(--acc)}
+.multi-select input:checked+span{color:var(--acc);font-weight:600}
+.sel-controls{display:flex;gap:.5rem;margin-bottom:.5rem}
+.sel-btn{background:none;border:1px solid var(--bdr);border-radius:6px;padding:.2rem .5rem;font-size:.75rem;color:var(--t2);cursor:pointer;font-family:inherit}
+.sel-btn:hover{border-color:var(--acc);color:var(--acc)}
+</style>{% endblock %}{% block body %}<h2 class="pt" style="margin-bottom:1.5rem">Achievements</h2>
+
+<div class="card" style="padding:2rem;margin-bottom:1.5rem">
+<h3 style="font-weight:700;margin-bottom:1rem"><i class="fas fa-plus" style="color:var(--acc);margin-right:.4rem"></i> Create Achievement</h3>
+<form method="POST" enctype="multipart/form-data">{{ form.hidden_tag() }}
+<div class="fg"><label class="fl">Title</label>{{ form.title(class="fi") }}{% for e in form.title.errors %}<small style="color:var(--err)">{{ e }}</small>{% endfor %}</div>
+<div class="fg"><label class="fl">Description</label>{{ form.description(class="ft",style="min-height:60px") }}{% for e in form.description.errors %}<small style="color:var(--err)">{{ e }}</small>{% endfor %}</div>
+<div class="fg"><label class="fl">Image</label>{{ form.image(class="fi") }}{% for e in form.image.errors %}<small style="color:var(--err)">{{ e }}</small>{% endfor %}</div>
+<button type="submit" class="btn btn-p"><i class="fas fa-plus"></i> Create</button>
+</form></div>
+
+{% if achs %}<div class="card" style="padding:1.5rem;margin-bottom:1.5rem"><h3 style="font-weight:700;margin-bottom:1rem">All Achievements</h3><div class="ag">{% for a in achs %}<div class="ach-wrap"><div class="acard" style="position:relative">
+<div class="ach-actions">
+<a href="{{ url_for('admin.adm_ach_edit',aid=a.id) }}" class="ach-btn ach-btn-edit" title="Edit"><i class="fas fa-pen"></i></a>
+<form method="POST" action="{{ url_for('admin.adm_ach_del',aid=a.id) }}" style="margin:0"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="ach-btn ach-btn-del" onclick="return confirm('Delete {{ a.title }}? Removed from all users.')" title="Delete"><i class="fas fa-trash"></i></button></form>
+</div>
+{% if a.image %}<img src="{{ url_for('static',filename='uploads/'+a.image) }}">{% else %}<div style="width:64px;height:64px;border-radius:8px;background:var(--accs);display:flex;align-items:center;justify-content:center;margin:0 auto .5rem"><i class="fas fa-medal" style="font-size:1.5rem;color:var(--acc)"></i></div>{% endif %}<div class="atitle">{{ a.title }}</div><div style="font-size:.65rem;color:var(--tm);margin-top:.2rem">{{ a.holders.count() }} user{{ 's' if a.holders.count() != 1 else '' }}</div>
+</div></div>{% endfor %}</div></div>{% endif %}
+
+<div class="card" style="padding:2rem;margin-bottom:1.5rem">
+<h3 style="font-weight:700;margin-bottom:1rem"><i class="fas fa-award" style="color:var(--acc);margin-right:.4rem"></i> Award Achievement</h3>
+<form method="POST" action="{{ url_for('admin.adm_award_bulk') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div class="fg"><label class="fl">Achievement</label><select name="aid" class="fs" required>{% for a in achs %}<option value="{{ a.id }}">{{ a.title }} ({{ a.holders.count() }} holders)</option>{% endfor %}</select></div>
+<div class="fg"><label class="fl">Players</label>
+<div class="sel-controls">
+<button type="button" class="sel-btn" onclick="this.closest('.fg').querySelectorAll('input[type=checkbox]').forEach(c=>c.checked=true)">Select All</button>
+<button type="button" class="sel-btn" onclick="this.closest('.fg').querySelectorAll('input[type=checkbox]').forEach(c=>c.checked=false)">Deselect All</button>
+<input type="text" placeholder="Filter..." style="padding:.2rem .5rem;background:var(--bg3);border:1px solid var(--bdr);border-radius:6px;color:var(--t1);font-size:.75rem;flex:1" oninput="var v=this.value.toLowerCase();this.closest('.fg').querySelectorAll('.multi-select label').forEach(l=>{l.style.display=l.textContent.toLowerCase().includes(v)?'':'none'})">
+</div>
+<div class="multi-select">
+{% for u in us %}<label><input type="checkbox" name="uids" value="{{ u.id }}"><span>{{ u.name() }} ({{ u.elo }})</span></label>{% endfor %}
+</div>
+</div>
+<button type="submit" class="btn btn-p" onclick="var c=this.closest('form').querySelectorAll('input[name=uids]:checked').length;if(!c){alert('Select at least one player.');return false}return confirm('Award to '+c+' player(s)?')"><i class="fas fa-award"></i> Award Selected</button>
+</form></div>
+
+{% if achs %}
+<div class="card" style="padding:2rem">
+<h3 style="font-weight:700;margin-bottom:1rem"><i class="fas fa-user-minus" style="color:var(--err);margin-right:.4rem"></i> Remove Achievement from Players</h3>
+<form method="POST" action="{{ url_for('admin.adm_revoke_bulk') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div class="fg"><label class="fl">Achievement</label><select name="aid" class="fs" id="revoke-ach" required onchange="updateRevokeList()">{% for a in achs %}<option value="{{ a.id }}">{{ a.title }} ({{ a.holders.count() }} holders)</option>{% endfor %}</select></div>
+<div class="fg"><label class="fl">Remove from</label>
+<div class="sel-controls">
+<button type="button" class="sel-btn" onclick="this.closest('.fg').querySelectorAll('input[type=checkbox]:not([disabled])').forEach(c=>c.checked=true)">Select All</button>
+<button type="button" class="sel-btn" onclick="this.closest('.fg').querySelectorAll('input[type=checkbox]').forEach(c=>c.checked=false)">Deselect All</button>
+</div>
+<div class="multi-select" id="revoke-list">
+{% for u in us %}<label data-achs="{{ u.trophies.all()|map(attribute='id')|list|join(',') }}"><input type="checkbox" name="uids" value="{{ u.id }}"><span>{{ u.name() }}</span></label>{% endfor %}
+</div>
+</div>
+<button type="submit" class="btn btn-d" onclick="var c=this.closest('form').querySelectorAll('input[name=uids]:checked').length;if(!c){alert('Select at least one player.');return false}return confirm('Remove achievement from '+c+' player(s)?')"><i class="fas fa-user-minus"></i> Remove from Selected</button>
+</form></div>
+{% endif %}
+
+{% endblock %}{% block js %}<script>
+function updateRevokeList(){
+var aid=document.getElementById('revoke-ach').value;
+document.querySelectorAll('#revoke-list label').forEach(function(l){
+var achs=l.getAttribute('data-achs').split(',');
+var has=achs.indexOf(aid)!==-1;
+l.style.display=has?'':'none';
+l.querySelector('input').checked=false;
+l.querySelector('input').disabled=!has;
+});
+}
+updateRevokeList();
+</script>{% endblock %}

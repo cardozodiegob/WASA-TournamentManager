@@ -1,0 +1,156 @@
+{% extends "base.html" %}{% block title %}{{ tourney.name }} — WASA Tournaments{% endblock %}{% block meta %}
+<meta property="og:title" content="{{ tourney.name }}">
+<meta property="og:description" content="{{ tourney.description|striptags|truncate(200) if tourney.description else tourney.game or 'Tournament' }} · {{ tourney.player_count }} players · {{ tourney.status|title }}">
+<meta property="og:type" content="website">
+<meta property="og:url" content="{{ request.url }}">
+{% if tourney.banner_image %}<meta property="og:image" content="{{ request.host_url }}static/uploads/{{ tourney.banner_image }}">{% elif tourney.logo %}<meta property="og:image" content="{{ request.host_url }}static/uploads/{{ tourney.logo }}">{% endif %}
+<meta property="og:site_name" content="WASA Tournaments">
+{% endblock %}{% block css %}
+
+<style>
+.tourney-hero{border-radius:16px;padding:2rem;margin-bottom:1.5rem;position:relative;overflow:hidden;
+{% if tourney.banner_image %}background-image:url('{{ url_for("static",filename="uploads/"+tourney.banner_image) }}');background-size:cover;background-position:center;{% endif %}
+background-color:{{ tourney.color_secondary or 'var(--bgc)' }};border:1px solid var(--bdr)}
+.tourney-hero-overlay{position:absolute;inset:0;background:linear-gradient(135deg,{{ tourney.color_secondary or 'var(--bgc)' }}dd,{{ tourney.color_primary or 'var(--acc)' }}44);border-radius:16px}
+.tourney-hero-content{position:relative;z-index:1}
+.tourney-logo{width:64px;height:64px;border-radius:12px;object-fit:cover;border:2px solid {{ tourney.color_primary or 'var(--acc)' }}}
+.tourney-logo-placeholder{width:64px;height:64px;border-radius:12px;background:{{ tourney.color_primary or 'var(--acc)' }}33;display:flex;align-items:center;justify-content:center;border:2px solid {{ tourney.color_primary or 'var(--acc)' }}}
+.bm-link{text-decoration:none;color:inherit;display:block;border-radius:10px;transition:transform .15s,box-shadow .15s}
+.bm-link:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(108,92,231,.15);color:inherit}
+.bm-link:hover .bm{border-color:var(--acc)}
+.bracket-connector{position:relative}
+.bm-projected{opacity:.5;border-style:dashed}
+.bm-projected .bm-p{font-style:italic}
+.bm-match-num{position:absolute;top:4px;left:6px;font-size:.6rem;color:var(--tm);font-weight:700}
+.bm-feeder{font-size:.68rem;color:var(--acc);font-style:italic;margin-top:.15rem}
+</style>{% endblock %}{% block body %}
+
+<div class="tourney-hero"><div class="tourney-hero-overlay"></div><div class="tourney-hero-content" style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap">
+{% if tourney.logo %}<img src="{{ url_for('static',filename='uploads/'+tourney.logo) }}" class="tourney-logo">{% else %}<div class="tourney-logo-placeholder"><i class="fas fa-trophy" style="color:{{ tourney.color_primary or 'var(--acc)' }};font-size:1.5rem"></i></div>{% endif %}
+<div><h2 class="pt" style="color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.5)">{{ tourney.name }}</h2><p style="color:rgba(255,255,255,.8);font-size:.9rem"><span class="b {% if tourney.status=='upcoming' %}b-i{% elif tourney.status=='active' %}b-s{% else %}b-m{% endif %}">{{ tourney.status|title }}</span> · {{ tourney.game or 'General' }} · {{ tourney.fmt|replace('_',' ')|title }}{% if tourney.ranked %} · <span class="b b-a">Ranked</span>{% endif %}</p></div>
+<div style="margin-left:auto;display:flex;gap:.5rem;flex-wrap:wrap">
+{% if current_user.is_authenticated and tourney.reg_open and current_user not in tourney.players.all() %}<form method="POST" action="{{ url_for('tournaments.t_join',tid=tourney.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-p btn-sm"><i class="fas fa-user-plus"></i> Join</button></form>{% endif %}
+{% if current_user.is_authenticated and current_user.admin and tourney.status=='upcoming' and tourney.player_count >= 2 and not tourney.bracket_generated %}<form method="POST" action="{{ url_for('tournaments.t_start',tid=tourney.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-ok btn-sm" onclick="return confirm('Start tournament?')"><i class="fas fa-play"></i> Start</button></form>{% endif %}
+<a href="{{ url_for('tournaments.export_tournament',tid=tourney.id) }}" class="btn btn-s btn-sm"><i class="fas fa-download"></i> CSV</a>
+</div></div></div>
+
+<div class="sr"><div class="sc"><div class="sv" style="color:{{ tourney.color_primary or 'var(--acc)' }}">{{ tourney.player_count }}/{{ tourney.max_players }}</div><div class="sl">Players</div></div><div class="sc"><div class="sv" style="color:{{ tourney.color_primary or 'var(--acc)' }}">{{ tourney.matches.count() }}</div><div class="sl">Matches</div></div><div class="sc"><div class="sv" style="color:{{ tourney.color_primary or 'var(--acc)' }}">{{ tourney.total_rounds }}</div><div class="sl">Rounds</div></div><div class="sc"><div class="sv" style="color:{{ tourney.color_primary or 'var(--acc)' }}">{{ tourney.current_round }}</div><div class="sl">Current</div></div></div>
+
+{% if tourney.description %}<div class="card" style="margin-bottom:1.5rem"><p style="color:var(--t2)">{{ tourney.description }}</p></div>{% endif %}
+{% if tourney.rules %}<div class="card" style="margin-bottom:1.5rem"><h3 style="font-weight:700;margin-bottom:.5rem"><i class="fas fa-scroll" style="color:var(--acc);margin-right:.4rem"></i> Rules</h3><div style="color:var(--t2);font-size:.9rem;line-height:1.7;white-space:pre-wrap">{{ tourney.rules }}</div></div>{% endif %}
+
+{% if tourney.bracket_generated %}<h3 class="pt" style="font-size:1.3rem;margin-bottom:1rem">{% if tourney.fmt=='round_robin' %}Schedule{% else %}Bracket{% endif %}</h3><div class="card" style="margin-bottom:1.5rem">
+{% if tourney.fmt=='round_robin' %}
+<div style="padding:1rem">
+{% for rnd in bracket.keys()|sort %}
+{% set rmatches = bracket.get(rnd, []) %}
+{% if rmatches %}
+<h4 style="color:var(--tm);font-size:.85rem;margin:1rem 0 .5rem;text-transform:uppercase;font-weight:600">{{ tourney.round_name(rnd) }}</h4>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.5rem;margin-bottom:.5rem">
+{% for m in rmatches %}
+{% if m.notes!='Bye' and m.p1_id!=m.p2_id %}
+{% if m.state=='verified' %}<a href="{{ url_for('matches.match_view',mid=m.id) }}" class="bm-link">{% endif %}
+<div class="bm {% if m.state=='scheduled' %}bm-active{% elif m.state=='verified' %}bm-done{% endif %}">
+<div class="bm-players"><div class="bm-p {% if m.winner_id==m.p1_id and m.state=='verified' %}bm-winner{% elif m.state=='verified' and m.winner_id and m.winner_id!=m.p1_id %}bm-loser{% endif %}"><span>{{ m.p1.name() }}</span><span class="bm-score">{% if m.state=='verified' %}{{ m.p1_score }}{% endif %}</span></div><div class="bm-p {% if m.winner_id==m.p2_id and m.state=='verified' %}bm-winner{% elif m.state=='verified' and m.winner_id and m.winner_id!=m.p2_id %}bm-loser{% endif %}"><span>{{ m.p2.name() }}</span><span class="bm-score">{% if m.state=='verified' %}{{ m.p2_score }}{% endif %}</span></div></div>
+<div class="bm-status">{% if m.state=='scheduled' %}{% if current_user.is_authenticated and current_user.id in [m.p1_id,m.p2_id] %}<a href="{{ url_for('tournaments.t_submit',tid=tourney.id,mid=m.id) }}" class="btn btn-p btn-sm" style="margin-top:.25rem;font-size:.7rem"><i class="fas fa-edit"></i> Submit</a>{% else %}Awaiting{% endif %}{% elif m.state=='pending' %}{% if current_user.is_authenticated and current_user.id in [m.p1_id,m.p2_id] and m.submit_by!=current_user.id %}<a href="{{ url_for('main.dash') }}" class="btn btn-w btn-sm" style="margin-top:.25rem;font-size:.7rem"><i class="fas fa-check"></i> Verify</a>{% else %}Verifying{% endif %}{% elif m.state=='disputed' %}⚠️ Disputed{% elif m.state=='verified' %}✓{% endif %}</div>
+</div>
+{% if m.state=='verified' %}</a>{% endif %}
+{% endif %}
+{% endfor %}
+</div>
+{% endif %}
+{% endfor %}
+</div>
+{% else %}
+<div class="bracket" style="display:flex;align-items:flex-start;white-space:nowrap">
+{% for rnd in bracket_rounds %}
+{% set rmatches = bracket.get(rnd, []) %}
+{% set projected = projected_bracket.get(rnd, []) %}
+{% set display_matches = rmatches if rmatches else projected %}
+<div class="bracket-round"><h4>{% if rnd==0 %}<span style="color:var(--warn)">Play-In</span>{% else %}{{ tourney.round_name(rnd) }}{% endif %}</h4>
+{% for item in display_matches %}
+{% if item.is_projected is defined and item.is_projected %}
+<div class="bm bm-projected" style="position:relative">
+<div class="bm-match-num">M{{ item.pos + 1 }}</div>
+<div class="bm-players">
+<div class="bm-p"><span>{{ item.p1_name }}</span></div>
+<div class="bm-p"><span>{{ item.p2_name }}</span></div>
+</div>
+<div class="bm-feeder">{{ item.feeder }}</div>
+</div>
+{% else %}
+{% set m = item %}
+{% if m.state=='verified' and m.notes!='Bye' and m.p1_id!=m.p2_id %}
+<a href="{{ url_for('matches.match_view',mid=m.id) }}" class="bm-link">
+{% endif %}
+<div class="bm {% if m.state=='scheduled' %}bm-active{% elif m.state=='verified' %}bm-done{% endif %}{% if m.notes=='Bye' %} bm-bye{% endif %}" style="position:relative;{% if tourney.color_primary and tourney.color_primary != '#6c5ce7' %}{% if m.state=='verified' %}border-color:{{ tourney.color_primary }}{% endif %}{% endif %}">
+<div class="bm-match-num">M{{ loop.index }}</div>
+<div class="bm-players"><div class="bm-p {% if m.winner_id==m.p1_id and m.state=='verified' %}bm-winner{% elif m.state=='verified' and m.winner_id and m.winner_id!=m.p1_id %}bm-loser{% endif %}"><span>{% if m.p1 %}{{ m.p1.name() }}{% else %}TBD{% endif %}</span><span class="bm-score">{% if m.state=='verified' %}{{ m.p1_score }}{% endif %}</span></div>{% if m.p1_id != m.p2_id %}<div class="bm-p {% if m.winner_id==m.p2_id and m.state=='verified' %}bm-winner{% elif m.state=='verified' and m.winner_id and m.winner_id!=m.p2_id %}bm-loser{% endif %}"><span>{% if m.p2 %}{{ m.p2.name() }}{% else %}TBD{% endif %}</span><span class="bm-score">{% if m.state=='verified' %}{{ m.p2_score }}{% endif %}</span></div>{% else %}<div class="bm-p" style="color:var(--tm);font-style:italic"><span>Bye</span></div>{% endif %}</div>
+<div class="bm-status">{% if m.notes=='Bye' %}Bye{% elif m.state=='scheduled' %}{% if current_user.is_authenticated and current_user.id in [m.p1_id,m.p2_id] %}<a href="{{ url_for('tournaments.t_submit',tid=tourney.id,mid=m.id) }}" class="btn btn-p btn-sm" style="margin-top:.25rem;font-size:.7rem"><i class="fas fa-edit"></i> Submit</a>{% else %}Awaiting{% endif %}{% elif m.state=='pending' %}{% if current_user.is_authenticated and current_user.id in [m.p1_id,m.p2_id] and m.submit_by!=current_user.id %}<a href="{{ url_for('main.dash') }}" class="btn btn-w btn-sm" style="margin-top:.25rem;font-size:.7rem"><i class="fas fa-check"></i> Verify</a>{% else %}Verifying{% endif %}{% elif m.state=='disputed' %}⚠️ Disputed{% elif m.state=='verified' %}{% if m.winner_comment %}<div style="font-size:.7rem;color:var(--t2);margin-top:.2rem;white-space:normal;font-style:italic" title="{{ m.winner.name() if m.winner else 'Winner' }}: {{ m.winner_comment }}">"{{ m.winner_comment[:30] }}{{ '…' if m.winner_comment|length > 30 else '' }}"</div>{% else %}✓{% endif %}{% endif %}</div></div>
+{% if m.state=='verified' and m.notes!='Bye' and m.p1_id!=m.p2_id %}
+</a>
+{% endif %}
+{% endif %}
+{% endfor %}</div>
+{% endfor %}
+</div>
+{% endif %}
+</div>{% endif %}
+
+<div class="tabs"><a href="{{ url_for('tournaments.t_view',tid=tourney.id,tab='players') }}" class="tab {% if vtab=='players' %}on{% endif %}">Players ({{ tourney.player_count }})</a><a href="{{ url_for('tournaments.t_view',tid=tourney.id,tab='matches') }}" class="tab {% if vtab=='matches' %}on{% endif %}">Match History</a>{% if tourney.fmt=='round_robin' and tourney.bracket_generated %}<a href="{{ url_for('tournaments.t_view',tid=tourney.id,tab='standings') }}" class="tab {% if vtab=='standings' %}on{% endif %}">Standings</a>{% endif %}</div>
+
+{% if vtab=='matches' %}
+{% if completed_matches %}
+<div style="display:flex;flex-direction:column;gap:.75rem">
+{% for m in completed_matches %}
+<a href="{{ url_for('matches.match_view',mid=m.id) }}" style="text-decoration:none;color:inherit">
+<div class="card" style="padding:1rem;transition:border-color .2s,transform .15s;cursor:pointer" onmouseover="this.style.borderColor='var(--acc)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='';this.style.transform=''">
+<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem">
+<div style="display:flex;align-items:center;gap:1rem;flex:1">
+<div style="text-align:center;min-width:60px"><div style="font-size:.7rem;color:var(--tm);text-transform:uppercase;font-weight:600">{{ tourney.round_name(m.round_num) if m.round_num is not none else '–' }}</div></div>
+<div style="display:flex;align-items:center;gap:.75rem;flex:1">
+<div style="text-align:right;flex:1"><div style="font-weight:{% if m.winner_id==m.p1_id %}700{% else %}400{% endif %};color:{% if m.winner_id==m.p1_id %}var(--ok){% else %}var(--t1){% endif %}">{{ m.p1.name() }}</div>{% if m.ranked %}<div style="font-size:.7rem;color:var(--tm)">{{ ('+' if m.elo_d1>0 else '') }}{{ m.elo_d1 }}</div>{% endif %}</div>
+<div style="text-align:center;min-width:60px"><div style="font-size:1.2rem;font-weight:800;color:var(--acc)">{{ m.p1_score }} – {{ m.p2_score }}</div>{% if m.draw %}<span class="b b-w" style="font-size:.65rem">Draw</span>{% endif %}</div>
+<div style="text-align:left;flex:1"><div style="font-weight:{% if m.winner_id==m.p2_id %}700{% else %}400{% endif %};color:{% if m.winner_id==m.p2_id %}var(--ok){% else %}var(--t1){% endif %}">{% if m.p1_id!=m.p2_id %}{{ m.p2.name() }}{% else %}Bye{% endif %}</div>{% if m.ranked %}<div style="font-size:.7rem;color:var(--tm)">{{ ('+' if m.elo_d2>0 else '') }}{{ m.elo_d2 }}</div>{% endif %}</div>
+</div></div>
+<div style="display:flex;flex-direction:column;align-items:end;gap:.25rem;min-width:80px">
+<div style="display:flex;gap:.25rem"><span class="b {% if m.ranked %}b-a{% else %}b-m{% endif %}">{{ 'Ranked' if m.ranked else 'Unranked' }}</span><span class="b {% if m.state=='verified' %}b-s{% else %}b-w{% endif %}">{{ m.state|title }}</span></div>
+<div style="font-size:.72rem;color:var(--tm)">{{ m.played_at.strftime('%b %d, %H:%M') }}</div>
+</div></div>
+{% if m.winner_comment %}<div style="margin-top:.5rem;padding-top:.5rem;border-top:1px solid var(--bdr);font-size:.82rem;color:var(--t2);font-style:italic"><i class="fas fa-comment" style="color:var(--acc);margin-right:.3rem"></i>{{ m.winner.name() if m.winner else 'Winner' }}: "{{ m.winner_comment }}"</div>{% endif %}
+</div></a>
+{% endfor %}
+</div>
+{% else %}<div class="empty"><i class="fas fa-gamepad"></i><p>No completed matches yet.</p></div>{% endif %}
+
+{% elif vtab=='standings' and tourney.fmt=='round_robin' %}
+{% if rr_standings %}
+<div class="card"><table class="dt"><thead><tr><th>#</th><th>Player</th><th>Pts</th><th>W</th><th>D</th><th>L</th><th>Scored</th><th>Conceded</th><th>Diff</th></tr></thead><tbody>
+{% for s in rr_standings %}<tr>
+<td style="font-weight:700;color:var(--acc)">{{ loop.index }}</td>
+<td><a href="{{ url_for('main.prof',u=s.user.username) }}" style="display:flex;align-items:center;gap:.5rem">{% if s.user.avatar %}<img src="{{ url_for('static',filename='uploads/'+s.user.avatar) }}" style="width:24px;height:24px;border-radius:50%;object-fit:cover">{% else %}<img src="{{ url_for('static',filename='placeholder_avatar.svg') }}" style="width:24px;height:24px;border-radius:50%;object-fit:cover">{% endif %}{{ s.user.name() }}</a></td>
+<td style="font-weight:800;color:var(--acc)">{{ s.pts }}</td>
+<td style="color:var(--ok)">{{ s.wins }}</td>
+<td style="color:var(--warn)">{{ s.draws }}</td>
+<td style="color:var(--err)">{{ s.losses }}</td>
+<td>{{ s.scored }}</td><td>{{ s.conceded }}</td>
+<td style="font-weight:600;color:{% if s.scored - s.conceded > 0 %}var(--ok){% elif s.scored - s.conceded < 0 %}var(--err){% else %}var(--tm){% endif %}">{{ '+' if s.scored - s.conceded > 0 else '' }}{{ s.scored - s.conceded }}</td>
+</tr>{% endfor %}</tbody></table></div>
+{% else %}<div class="empty"><i class="fas fa-table"></i><p>No matches completed yet.</p></div>{% endif %}
+
+{% else %}<div class="card"><table class="dt"><thead><tr><th>#</th><th>Player</th><th>ELO</th><th>Seed</th></tr></thead><tbody>{% for p in ps %}<tr><td>{{ loop.index }}</td><td><a href="{{ url_for('main.prof',u=p.username) }}" style="display:flex;align-items:center;gap:.5rem">{% if p.avatar %}<img src="{{ url_for('static',filename='uploads/'+p.avatar) }}" style="width:24px;height:24px;border-radius:50%;object-fit:cover">{% else %}<img src="{{ url_for('static',filename='placeholder_avatar.svg') }}" style="width:24px;height:24px;border-radius:50%;object-fit:cover">{% endif %}{{ p.name() }}</a></td><td style="font-weight:600">{{ p.elo }}</td><td style="color:var(--tm)">#{{ loop.index }}</td></tr>{% endfor %}</tbody></table></div>{% endif %}
+
+{% if tourney.status=='active' %}
+<script>
+(function(){
+var lastCheck='';
+function pollBracket(){
+fetch('/api/tournament/{{ tourney.id }}/status').then(function(r){return r.json()}).then(function(d){
+if(d.hash && d.hash!==lastCheck && lastCheck!==''){location.reload();}
+lastCheck=d.hash;
+}).catch(function(){});}
+pollBracket();setInterval(pollBracket,15000);
+})();
+</script>
+{% endif %}
+{% endblock %}

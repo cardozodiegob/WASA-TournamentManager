@@ -1,0 +1,58 @@
+{% extends "base.html" %}{% block title %}Clan War: {{ clan1.name }} vs {{ clan2.name }}{% endblock %}{% block css %}
+<style>
+.war-header{text-align:center;padding:2rem 1rem;border-radius:16px;background:var(--c2);margin-bottom:1.5rem}
+.war-score{font-size:2.5rem;font-weight:800;letter-spacing:.05em;margin:.75rem 0}
+.war-score .s1{color:var(--acc)}.war-score .s2{color:var(--warn)}.war-score .vs{color:var(--t2);font-size:1.2rem;margin:0 .75rem}
+.war-status{display:inline-block;padding:.3rem .8rem;border-radius:8px;font-size:.85rem;font-weight:600}
+.war-status.pending{background:var(--warn-bg,#f0ad4e22);color:var(--warn)}
+.war-status.active{background:var(--ok-bg,#2ecc7122);color:var(--ok)}
+.war-status.completed{background:var(--acc-bg,#6c5ce722);color:var(--acc)}
+.war-status.cancelled{background:var(--err-bg,#e74c3c22);color:var(--err)}
+.slot-table{width:100%;border-collapse:collapse}.slot-table th,.slot-table td{padding:.6rem .8rem;text-align:center;border-bottom:1px solid var(--brd)}
+.slot-table th{color:var(--t2);font-size:.8rem;text-transform:uppercase;letter-spacing:.05em}
+.slot-table .slot-num{font-weight:700;color:var(--t2);width:3rem}
+.slot-table .player-name{font-weight:600}
+.slot-table .empty-slot{color:var(--t3);font-style:italic}
+.assign-form select{padding:.3rem .5rem;border-radius:6px;background:var(--c2);color:var(--t1);border:1px solid var(--brd);font-size:.85rem}
+.assign-form button{padding:.3rem .6rem;border-radius:6px;font-size:.8rem}
+</style>
+{% endblock %}{% block body %}
+<div class="war-header">
+<div style="display:flex;justify-content:center;align-items:center;gap:1.5rem;flex-wrap:wrap">
+<a href="{{ url_for('clans.clan_view',cid=clan1.id) }}" style="font-weight:700;font-size:1.1rem;color:var(--acc)">[{{ clan1.tag }}] {{ clan1.name }}</a>
+<span style="color:var(--t2);font-size:.9rem">vs</span>
+<a href="{{ url_for('clans.clan_view',cid=clan2.id) }}" style="font-weight:700;font-size:1.1rem;color:var(--warn)">[{{ clan2.tag }}] {{ clan2.name }}</a>
+</div>
+<div class="war-score"><span class="s1">{{ war.clan1_wins }}</span><span class="vs">-</span><span class="s2">{{ war.clan2_wins }}</span></div>
+<span class="war-status {{ war.status }}">{{ war.status|capitalize }}</span>
+{% if war.status == 'completed' and war.winner %}<div style="margin-top:.5rem;color:var(--ok);font-weight:700"><i class="fas fa-trophy"></i> Winner: [{{ war.winner.tag }}] {{ war.winner.name }}</div>{% endif %}
+<div style="margin-top:.5rem;color:var(--t2);font-size:.85rem">Best of {{ war.match_count }} &middot; Started {{ war.created_at.strftime('%b %d, %Y') }}</div>
+</div>
+<div class="card" style="overflow-x:auto"><h3 style="margin-bottom:1rem"><i class="fas fa-table-list"></i> Match Slots</h3>
+<table class="slot-table"><thead><tr><th class="slot-num">#</th><th>[{{ clan1.tag }}] Player</th><th>[{{ clan2.tag }}] Player</th><th>Result</th><th>Actions</th></tr></thead><tbody>
+{% for wm in war_matches %}
+<tr>
+<td class="slot-num">{{ wm.slot_number }}</td>
+<td>{% if wm.clan1_player %}<a href="{{ url_for('main.prof',u=wm.clan1_player.username) }}" class="player-name">{{ wm.clan1_player.display_name or wm.clan1_player.username }}</a>{% else %}<span class="empty-slot">Unassigned</span>{% endif %}</td>
+<td>{% if wm.clan2_player %}<a href="{{ url_for('main.prof',u=wm.clan2_player.username) }}" class="player-name">{{ wm.clan2_player.display_name or wm.clan2_player.username }}</a>{% else %}<span class="empty-slot">Unassigned</span>{% endif %}</td>
+<td>{% if wm.match %}{% if wm.match.winner_id %}<a href="{{ url_for('matches.match_view',mid=wm.match.id) }}" style="font-weight:600;color:var(--ok)">{{ wm.match.p1_score }}-{{ wm.match.p2_score }}</a>{% else %}<a href="{{ url_for('matches.match_view',mid=wm.match.id) }}" style="color:var(--t2)">In Progress</a>{% endif %}{% elif wm.clan1_player and wm.clan2_player %}<span style="color:var(--t3)">Awaiting match</span>{% else %}<span style="color:var(--t3)">&mdash;</span>{% endif %}</td>
+<td>{% if war.status == 'active' and can_manage %}{% if not wm.clan1_player and user_clan_id == clan1.id %}
+<form method="post" action="{{ url_for('clans.clan_war_assign',cid=cid,wid=war.id) }}" class="assign-form" style="display:inline">
+<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}"><input type="hidden" name="slot" value="{{ wm.slot_number }}"><input type="hidden" name="side" value="clan1">
+<select name="player_id">{% for m in clan1_members %}<option value="{{ m.user_id }}">{{ m.display_name or m.username }}</option>{% endfor %}</select>
+<button type="submit" class="btn btn-p btn-sm">Assign</button></form>
+{% endif %}{% if not wm.clan2_player and user_clan_id == clan2.id %}
+<form method="post" action="{{ url_for('clans.clan_war_assign',cid=cid,wid=war.id) }}" class="assign-form" style="display:inline">
+<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}"><input type="hidden" name="slot" value="{{ wm.slot_number }}"><input type="hidden" name="side" value="clan2">
+<select name="player_id">{% for m in clan2_members %}<option value="{{ m.user_id }}">{{ m.display_name or m.username }}</option>{% endfor %}</select>
+<button type="submit" class="btn btn-p btn-sm">Assign</button></form>
+{% endif %}{% if wm.clan1_player and wm.clan2_player and not wm.match %}
+<form method="post" action="{{ url_for('clans.clan_war_assign',cid=cid,wid=war.id) }}" class="assign-form" style="display:inline">
+<input type="hidden" name="csrf_token" value="{{ session.csrf_token }}"><input type="hidden" name="slot" value="{{ wm.slot_number }}"><input type="hidden" name="action" value="create_match">
+<button type="submit" class="btn btn-s btn-sm"><i class="fas fa-plus"></i> Create Match</button></form>
+{% endif %}{% endif %}</td>
+</tr>
+{% endfor %}
+</tbody></table></div>
+<div style="margin-top:1.5rem;text-align:center"><a href="{{ url_for('clans.clan_view',cid=clan1.id) }}" class="btn btn-s btn-sm">&laquo; {{ clan1.name }}</a> <a href="{{ url_for('clans.clan_view',cid=clan2.id) }}" class="btn btn-s btn-sm">{{ clan2.name }} &raquo;</a></div>
+{% endblock %}

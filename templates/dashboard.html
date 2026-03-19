@@ -1,0 +1,146 @@
+{% extends "base.html" %}{% block title %}Dashboard{% endblock %}{% block body %}<h2 class="pt" style="margin-bottom:1.5rem">Dashboard</h2><div class="sr"><div class="sc"><div class="sv">{{ current_user.elo }}</div><div class="sl">ELO</div></div><div class="sc"><div class="sv">{{ current_user.total_ranked }}</div><div class="sl">Ranked</div></div><div class="sc"><div class="sv">{{ current_user.total_unranked }}</div><div class="sl">Unranked</div></div><div class="sc"><div class="sv">{{ current_user.ranked_wr }}%</div><div class="sl">Win Rate</div></div><div class="sc"><div class="sv" style="color:var(--warn)">{{ current_user.points }} 🪙</div><div class="sl">PongCoins</div></div></div>
+<div style="text-align:right;margin-bottom:1rem"><a href="{{ url_for('main.export_my_stats') }}" class="btn btn-s btn-sm"><i class="fas fa-download"></i> Export My Stats</a></div>
+
+{% if pch %}<h3 class="pt" style="font-size:1.3rem;margin-bottom:1rem">Pending Challenges</h3><div class="card" style="margin-bottom:1.5rem"><table class="dt"><thead><tr><th>Who</th><th>When</th><th>Action</th></tr></thead><tbody>{% for c in pch %}{% set o=c.sender if c.to_id==current_user.id else c.receiver %}<tr><td><a href="{{ url_for('main.prof',u=o.username) }}">{{ o.name() }}</a></td><td>{{ c.when.strftime('%b %d %H:%M') }}</td><td>{% if c.to_id==current_user.id %}<form method="POST" action="{{ url_for('main.ch_respond',cid=c.id) }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button name="act" value="accept" class="btn btn-ok btn-sm"><i class="fas fa-check"></i></button> <button name="act" value="decline" class="btn btn-d btn-sm"><i class="fas fa-times"></i></button></form>{% else %}<span class="b b-m">Waiting</span>{% endif %}</td></tr>{% endfor %}</tbody></table></div>{% endif %}
+
+{% if pres %}<h3 class="pt" style="font-size:1.3rem;margin-bottom:1rem">Pending Match Results</h3><div style="display:flex;flex-direction:column;gap:.75rem;margin-bottom:1.5rem">{% for m in pres %}{% set o=m.p2 if m.p1_id==current_user.id else m.p1 %}
+<div class="card" style="padding:1rem">
+<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;margin-bottom:.5rem">
+<div>
+<strong>vs {{ o.name() }}</strong>
+{% if m.tourney_id %} <span class="b b-a" style="font-size:.65rem"><i class="fas fa-trophy"></i> {{ m.tournament.name }}</span>{% endif %}
+{% if m.ranked %} <span class="b b-a" style="font-size:.65rem">Ranked</span>{% endif %}
+</div>
+<div style="font-size:1.1rem;font-weight:700;color:var(--acc)">{{ m.p1_score }}–{{ m.p2_score }}</div>
+</div>
+
+{% if m.winner_id %}
+<div style="font-size:.85rem;color:var(--t2);margin-bottom:.5rem">
+Winner: <strong style="color:var(--ok)">{{ m.winner.name() }}</strong>
+{% if m.winner_id == current_user.id %} (You){% endif %}
+</div>
+{% elif m.draw %}
+<div style="font-size:.85rem;color:var(--warn);margin-bottom:.5rem">Draw</div>
+{% endif %}
+
+{% if m.notes %}<div style="font-size:.82rem;color:var(--tm);margin-bottom:.5rem"><i class="fas fa-sticky-note"></i> {{ m.notes }}</div>{% endif %}
+{% if m.counter_by %}<div style="margin-bottom:.5rem"><span class="b b-w">Counter: {{ m.counter_p1 }}–{{ m.counter_p2 }}</span></div>{% endif %}
+
+{% if m.submit_by != current_user.id %}
+<div style="font-size:.82rem;color:var(--tm);margin-bottom:.5rem">Submitted by {{ m.submitter.name() if m.submitter else 'opponent' }} · Waiting for your verification</div>
+<div style="display:flex;gap:.35rem;flex-wrap:wrap;align-items:end">
+<form method="POST" action="{{ url_for('matches.verify',mid=m.id) }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button name="act" value="accept" class="btn btn-ok btn-sm"><i class="fas fa-check"></i> Accept</button></form>
+<form method="POST" action="{{ url_for('matches.counter_result',mid=m.id) }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="number" name="my_s" min="0" style="width:40px;padding:.2rem;background:var(--bg3);border:1px solid var(--bdr);border-radius:6px;color:var(--t1);text-align:center" placeholder="Y">–<input type="number" name="opp_s" min="0" style="width:40px;padding:.2rem;background:var(--bg3);border:1px solid var(--bdr);border-radius:6px;color:var(--t1);text-align:center" placeholder="O"><button class="btn btn-w btn-sm" style="margin-left:.25rem" title="Counter"><i class="fas fa-exchange-alt"></i></button></form>
+</div>
+<details style="margin-top:.5rem"><summary style="font-size:.82rem;color:var(--err);cursor:pointer;font-weight:600"><i class="fas fa-exclamation-triangle"></i> Dispute</summary>
+<form method="POST" action="{{ url_for('matches.verify',mid=m.id) }}" style="margin-top:.5rem"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div class="fg" style="margin-bottom:.5rem"><textarea name="dispute_reason" class="ft" style="min-height:60px;font-size:.85rem" placeholder="Explain why you're disputing this result..." required></textarea></div>
+<button name="act" value="dispute" class="btn btn-d btn-sm"><i class="fas fa-gavel"></i> Submit Dispute</button>
+</form></details>
+
+{% elif m.counter_by %}
+<div style="font-size:.82rem;color:var(--tm);margin-bottom:.5rem">Opponent proposed a counter · Review it</div>
+<div style="display:flex;gap:.35rem">
+<form method="POST" action="{{ url_for('matches.verify',mid=m.id) }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button name="act" value="accept_counter" class="btn btn-ok btn-sm">Accept Counter</button></form>
+<details><summary style="font-size:.82rem;color:var(--err);cursor:pointer;font-weight:600"><i class="fas fa-exclamation-triangle"></i> Dispute</summary>
+<form method="POST" action="{{ url_for('matches.verify',mid=m.id) }}" style="margin-top:.5rem"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<textarea name="dispute_reason" class="ft" style="min-height:60px;font-size:.85rem" placeholder="Explain why..." required></textarea>
+<button name="act" value="dispute" class="btn btn-d btn-sm" style="margin-top:.35rem"><i class="fas fa-gavel"></i> Dispute</button>
+</form></details>
+</div>
+
+{% else %}
+<div style="font-size:.82rem;color:var(--tm)"><i class="fas fa-clock"></i> You submitted this result · Waiting for {{ o.name() }} to verify</div>
+{% endif %}
+
+{% if m.tourney_id %}<div style="margin-top:.5rem"><a href="{{ url_for('tournaments.t_view',tid=m.tourney_id) }}" class="btn btn-s btn-sm"><i class="fas fa-trophy"></i> View Tournament</a></div>{% endif %}
+</div>
+{% endfor %}</div>{% endif %}
+
+{% if not pch and not pres %}
+<div class="empty"><i class="fas fa-check-circle"></i><p>All caught up! No pending actions.</p></div>
+{% endif %}
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1rem;margin-top:1.5rem">
+
+<div class="card" style="background:var(--bg2);border-radius:12px;padding:1rem">
+<h3 style="font-size:1.1rem;font-weight:700;margin-bottom:.75rem"><i class="fas fa-coins" style="color:var(--warn)"></i> Recent Transactions</h3>
+{% if recent_txns %}
+<div style="display:flex;flex-direction:column;gap:.4rem">
+{% for tx in recent_txns %}
+<div style="display:flex;justify-content:space-between;align-items:center;font-size:.85rem;padding:.3rem 0;border-bottom:1px solid var(--bdr)">
+<span style="color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:65%">{{ tx.reason }}</span>
+<span style="font-weight:700;color:{% if tx.amount >= 0 %}var(--ok){% else %}var(--err){% endif %}">{{ '+' if tx.amount >= 0 }}{{ tx.amount }} 🪙</span>
+</div>
+{% endfor %}
+</div>
+<div style="margin-top:.5rem;text-align:right"><a href="{{ url_for('economy.points_history') }}" style="font-size:.82rem;color:var(--acc)">View all →</a></div>
+{% else %}
+<p style="font-size:.85rem;color:var(--tm)">No transactions yet.</p>
+{% endif %}
+</div>
+
+<div class="card" style="background:var(--bg2);border-radius:12px;padding:1rem">
+<h3 style="font-size:1.1rem;font-weight:700;margin-bottom:.75rem"><i class="fas fa-dice" style="color:var(--acc)"></i> Active Bets</h3>
+{% if active_bets %}
+<div style="display:flex;flex-direction:column;gap:.4rem">
+{% for b in active_bets %}
+<div style="font-size:.85rem;padding:.3rem 0;border-bottom:1px solid var(--bdr);display:flex;justify-content:space-between;align-items:center">
+<span style="color:var(--t2)">{{ b.predicted_winner.name() }} <span style="color:var(--tm);font-size:.75rem">vs {{ b.match.p1.name() if b.predicted_winner_id == b.match.p2_id else b.match.p2.name() }}</span></span>
+<span style="font-weight:700;color:var(--warn)">{{ b.amount }} 🪙</span>
+</div>
+{% endfor %}
+</div>
+<div style="margin-top:.5rem;text-align:right"><a href="{{ url_for('economy.bet_history') }}" style="font-size:.82rem;color:var(--acc)">View all →</a></div>
+{% else %}
+<p style="font-size:.85rem;color:var(--tm)">No active bets.</p>
+{% endif %}
+</div>
+
+<div class="card" style="background:var(--bg2);border-radius:12px;padding:1rem">
+<h3 style="font-size:1.1rem;font-weight:700;margin-bottom:.75rem"><i class="fas fa-calendar-alt" style="color:#a855f7"></i> Upcoming Matches</h3>
+{% if upcoming_matches %}
+<div style="display:flex;flex-direction:column;gap:.4rem">
+{% for m in upcoming_matches %}
+{% set opp = m.p2 if m.p1_id == current_user.id else m.p1 %}
+<div style="font-size:.85rem;padding:.3rem 0;border-bottom:1px solid var(--bdr);display:flex;justify-content:space-between;align-items:center">
+<a href="{{ url_for('matches.match_view', mid=m.id) }}" style="color:var(--t1)">vs {{ opp.name() }}</a>
+<span style="font-size:.75rem;color:var(--tm)">{{ m.scheduled_at.strftime('%b %d %H:%M') }}</span>
+</div>
+{% endfor %}
+</div>
+<div style="margin-top:.5rem;text-align:right"><a href="{{ url_for('social.match_calendar') }}" style="font-size:.82rem;color:var(--acc)">Calendar →</a></div>
+{% else %}
+<p style="font-size:.85rem;color:var(--tm)">No upcoming matches.</p>
+{% endif %}
+</div>
+
+<div class="card" style="background:var(--bg2);border-radius:12px;padding:1rem">
+<h3 style="font-size:1.1rem;font-weight:700;margin-bottom:.75rem"><i class="fas fa-trophy" style="color:gold"></i> MVP Voting</h3>
+<div style="font-size:.85rem;margin-bottom:.5rem">
+<span style="color:var(--t2)">Weekly:</span> <span class="b b-a" style="font-size:.72rem">{{ weekly_key }}</span>
+{% if weekly_voted %}<span style="color:var(--ok);font-size:.82rem;margin-left:.25rem">✓ Voted</span>{% else %}<span style="color:var(--warn);font-size:.82rem;margin-left:.25rem">Not voted</span>{% endif %}
+</div>
+<div style="font-size:.85rem;margin-bottom:.5rem">
+<span style="color:var(--t2)">Monthly:</span> <span class="b b-a" style="font-size:.72rem">{{ monthly_key }}</span>
+{% if monthly_voted %}<span style="color:var(--ok);font-size:.82rem;margin-left:.25rem">✓ Voted</span>{% else %}<span style="color:var(--warn);font-size:.82rem;margin-left:.25rem">Not voted</span>{% endif %}
+</div>
+<div style="text-align:right"><a href="{{ url_for('social.mvp_page') }}" style="font-size:.82rem;color:var(--acc)">Vote now →</a></div>
+</div>
+
+<div class="card" style="background:var(--bg2);border-radius:12px;padding:1rem">
+<h3 style="font-size:1.1rem;font-weight:700;margin-bottom:.75rem"><i class="fas fa-gem" style="color:#06b6d4"></i> Equipped Cosmetics</h3>
+{% if equipped_cosmetics %}
+<div style="display:flex;flex-wrap:wrap;gap:.5rem">
+{% for uc in equipped_cosmetics %}
+<span class="b b-s" style="font-size:.78rem"><i class="fas fa-{% if uc.item.category == 'border' %}square{% elif uc.item.category == 'banner' %}image{% elif uc.item.category == 'title_color' %}palette{% elif uc.item.category == 'glow' %}sun{% else %}star{% endif %}"></i> {{ uc.item.name }}</span>
+{% endfor %}
+</div>
+<div style="margin-top:.5rem;text-align:right"><a href="{{ url_for('economy.inventory') }}" style="font-size:.82rem;color:var(--acc)">Manage →</a></div>
+{% else %}
+<p style="font-size:.85rem;color:var(--tm)">No cosmetics equipped. <a href="{{ url_for('economy.shop') }}" style="color:var(--acc)">Visit shop</a></p>
+{% endif %}
+</div>
+
+</div>
+{% endblock %}

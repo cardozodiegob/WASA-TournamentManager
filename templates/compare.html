@@ -1,0 +1,92 @@
+{% extends "base.html" %}{% block title %}Compare{% endblock %}{% block css %}
+<style>
+.cmp-row{display:flex;align-items:center;gap:.5rem;padding:.6rem 0;border-bottom:1px solid var(--bdr)}
+.cmp-row:last-child{border-bottom:none}
+.cmp-label{flex:0 0 110px;font-size:.82rem;color:var(--tm);text-align:center;font-weight:600}
+.cmp-val{flex:1;text-align:center;font-weight:700;font-size:.95rem}
+.cmp-better{color:var(--ok)}
+.cmp-bar{display:flex;height:24px;border-radius:6px;overflow:hidden;margin:.3rem 0}
+.cmp-l{background:var(--acc);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:#fff;min-width:24px}
+.cmp-r{background:var(--err);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:#fff;min-width:24px}
+</style>{% endblock %}{% block body %}
+<div class="ph"><div><h2 class="pt"><i class="fas fa-scale-balanced"></i> Compare Players</h2></div></div>
+
+<div class="card" style="padding:1.25rem;margin-bottom:1.5rem">
+<form method="GET" style="display:flex;gap:.75rem;align-items:end;flex-wrap:wrap">
+<div class="fg" style="flex:1;min-width:180px;margin-bottom:0"><label class="fl">Player 1</label><select name="p1" class="fs">{% for u in players %}<option value="{{ u.id }}" {% if p1 and p1.id==u.id %}selected{% endif %}>{{ u.name() }} ({{ u.elo }})</option>{% endfor %}</select></div>
+<div style="font-size:1.2rem;color:var(--acc);font-weight:800;padding-bottom:.3rem">vs</div>
+<div class="fg" style="flex:1;min-width:180px;margin-bottom:0"><label class="fl">Player 2</label><select name="p2" class="fs">{% for u in players %}<option value="{{ u.id }}" {% if p2 and p2.id==u.id %}selected{% endif %}>{{ u.name() }} ({{ u.elo }})</option>{% endfor %}</select></div>
+<button type="submit" class="btn btn-p btn-sm"><i class="fas fa-scale-balanced"></i> Compare</button>
+</form></div>
+
+{% if p1 and p2 and p1.id != p2.id %}
+<div class="card" style="padding:1.5rem;margin-bottom:1.5rem">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
+<div style="text-align:center;flex:1">
+{% if p1.avatar %}<img src="{{ url_for('static',filename='uploads/'+p1.avatar) }}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:3px solid var(--acc);margin-bottom:.5rem">{% else %}<img src="{{ url_for('static',filename='placeholder_avatar.svg') }}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:3px solid var(--acc);margin-bottom:.5rem">{% endif %}
+<div style="font-weight:700;font-size:1.1rem"><a href="{{ url_for('main.prof',u=p1.username) }}">{{ p1.name() }}</a></div>
+<div><span class="b b-r" style="background:{{ p1.rank_color }}22;color:{{ p1.rank_color }}">{{ p1.rank_title }}</span></div>
+</div>
+<div style="font-size:2rem;font-weight:800;color:var(--acc)">VS</div>
+<div style="text-align:center;flex:1">
+{% if p2.avatar %}<img src="{{ url_for('static',filename='uploads/'+p2.avatar) }}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:3px solid var(--err);margin-bottom:.5rem">{% else %}<img src="{{ url_for('static',filename='placeholder_avatar.svg') }}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:3px solid var(--err);margin-bottom:.5rem">{% endif %}
+<div style="font-weight:700;font-size:1.1rem"><a href="{{ url_for('main.prof',u=p2.username) }}">{{ p2.name() }}</a></div>
+<div><span class="b b-r" style="background:{{ p2.rank_color }}22;color:{{ p2.rank_color }}">{{ p2.rank_title }}</span></div>
+</div>
+</div>
+
+<div class="cmp-row"><div class="cmp-val {% if p1.elo > p2.elo %}cmp-better{% endif %}">{{ p1.elo }}</div><div class="cmp-label">ELO</div><div class="cmp-val {% if p2.elo > p1.elo %}cmp-better{% endif %}">{{ p2.elo }}</div></div>
+<div class="cmp-row"><div class="cmp-val {% if p1.r_wins > p2.r_wins %}cmp-better{% endif %}">{{ p1.r_wins }}</div><div class="cmp-label">Ranked Wins</div><div class="cmp-val {% if p2.r_wins > p1.r_wins %}cmp-better{% endif %}">{{ p2.r_wins }}</div></div>
+<div class="cmp-row"><div class="cmp-val {% if p1.r_losses < p2.r_losses %}cmp-better{% endif %}">{{ p1.r_losses }}</div><div class="cmp-label">Ranked Losses</div><div class="cmp-val {% if p2.r_losses < p1.r_losses %}cmp-better{% endif %}">{{ p2.r_losses }}</div></div>
+<div class="cmp-row"><div class="cmp-val {% if p1.ranked_wr > p2.ranked_wr %}cmp-better{% endif %}">{{ p1.ranked_wr }}%</div><div class="cmp-label">Win Rate</div><div class="cmp-val {% if p2.ranked_wr > p1.ranked_wr %}cmp-better{% endif %}">{{ p2.ranked_wr }}%</div></div>
+<div class="cmp-row"><div class="cmp-val {% if p1.total_matches > p2.total_matches %}cmp-better{% endif %}">{{ p1.total_matches }}</div><div class="cmp-label">Total Matches</div><div class="cmp-val {% if p2.total_matches > p1.total_matches %}cmp-better{% endif %}">{{ p2.total_matches }}</div></div>
+<div class="cmp-row"><div class="cmp-val {% if p1.best_streak > p2.best_streak %}cmp-better{% endif %}">{{ p1.best_streak }}</div><div class="cmp-label">Best Streak</div><div class="cmp-val {% if p2.best_streak > p1.best_streak %}cmp-better{% endif %}">{{ p2.best_streak }}</div></div>
+<div class="cmp-row"><div class="cmp-val {% if p1.streak > p2.streak %}cmp-better{% endif %}">{{ p1.streak }}</div><div class="cmp-label">Current Streak</div><div class="cmp-val {% if p2.streak > p1.streak %}cmp-better{% endif %}">{{ p2.streak }}</div></div>
+<div class="cmp-row"><div class="cmp-val {% if p1.u_wins > p2.u_wins %}cmp-better{% endif %}">{{ p1.u_wins }}</div><div class="cmp-label">Unranked Wins</div><div class="cmp-val {% if p2.u_wins > p1.u_wins %}cmp-better{% endif %}">{{ p2.u_wins }}</div></div>
+<div class="cmp-row"><div class="cmp-val">{{ p1.trophies.count() }}</div><div class="cmp-label">Achievements</div><div class="cmp-val">{{ p2.trophies.count() }}</div></div>
+</div>
+
+{% if h2h %}
+<div class="card" style="padding:1.5rem">
+<h3 style="font-weight:700;margin-bottom:1rem;text-align:center">Head-to-Head ({{ h2h.total }} matches)</h3>
+<div style="display:flex;justify-content:space-around;margin-bottom:1rem">
+<div style="text-align:center"><div style="font-size:2rem;font-weight:800;color:var(--ok)">{{ h2h.w1 }}</div><div style="font-size:.8rem;color:var(--tm)">{{ p1.name() }}</div></div>
+<div style="text-align:center"><div style="font-size:2rem;font-weight:800;color:var(--warn)">{{ h2h.draws }}</div><div style="font-size:.8rem;color:var(--tm)">Draws</div></div>
+<div style="text-align:center"><div style="font-size:2rem;font-weight:800;color:var(--err)">{{ h2h.w2 }}</div><div style="font-size:.8rem;color:var(--tm)">{{ p2.name() }}</div></div>
+</div>
+{% if h2h.total > 0 %}
+<div class="cmp-bar">
+{% if h2h.w1 > 0 %}<div class="cmp-l" style="width:{{ (h2h.w1/h2h.total*100)|round(1) }}%">{{ h2h.w1 }}</div>{% endif %}
+{% if h2h.draws > 0 %}<div style="background:var(--warn);flex:0 0 {{ (h2h.draws/h2h.total*100)|round(1) }}%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:#1a1a2e">{{ h2h.draws }}</div>{% endif %}
+{% if h2h.w2 > 0 %}<div class="cmp-r" style="width:{{ (h2h.w2/h2h.total*100)|round(1) }}%">{{ h2h.w2 }}</div>{% endif %}
+</div>
+{% endif %}
+<div style="display:flex;justify-content:space-around;margin-top:1rem;flex-wrap:wrap;gap:.5rem">
+<div style="text-align:center"><div style="font-size:.75rem;color:var(--tm)">Ranked</div><div style="font-weight:600">{{ h2h.ranked }}</div></div>
+<div style="text-align:center"><div style="font-size:.75rem;color:var(--tm)">Unranked</div><div style="font-weight:600">{{ h2h.unranked }}</div></div>
+<div style="text-align:center"><div style="font-size:.75rem;color:var(--tm)">Net ELO ({{ p1.name()[:8] }})</div><div style="font-weight:600;color:{% if h2h.elo_exchanged > 0 %}var(--ok){% elif h2h.elo_exchanged < 0 %}var(--err){% else %}var(--tm){% endif %}">{{ ('+' if h2h.elo_exchanged > 0 else '') }}{{ h2h.elo_exchanged }}</div></div>
+</div>
+{% if h2h.matches[:5] %}
+<div style="margin-top:1rem;border-top:1px solid var(--bdr);padding-top:.75rem">
+<div style="font-size:.82rem;font-weight:600;color:var(--tm);margin-bottom:.5rem">Recent H2H</div>
+<table class="dt"><thead><tr><th>Date</th><th>{{ p1.name()[:8] }}</th><th>Score</th><th>{{ p2.name()[:8] }}</th></tr></thead><tbody>
+{% for m in h2h.matches[:5] %}
+{% set s1=m.p1_score if m.p1_id==p1.id else m.p2_score %}
+{% set s2=m.p2_score if m.p1_id==p1.id else m.p1_score %}
+<tr>
+<td style="font-size:.82rem;color:var(--tm)">{{ m.played_at.strftime('%b %d') }}</td>
+<td style="{% if m.winner_id==p1.id %}font-weight:700;color:var(--ok){% elif m.draw %}color:var(--warn){% else %}color:var(--err){% endif %}">{% if m.winner_id==p1.id %}W{% elif m.draw %}D{% else %}L{% endif %}</td>
+<td style="font-weight:600">{{ s1 }}–{{ s2 }}</td>
+<td style="{% if m.winner_id==p2.id %}font-weight:700;color:var(--ok){% elif m.draw %}color:var(--warn){% else %}color:var(--err){% endif %}">{% if m.winner_id==p2.id %}W{% elif m.draw %}D{% else %}L{% endif %}</td>
+</tr>{% endfor %}</tbody></table>
+</div>
+{% endif %}
+</div>
+{% else %}
+<div class="card" style="text-align:center;padding:2rem;color:var(--tm)"><i class="fas fa-handshake-slash" style="font-size:1.5rem;margin-bottom:.5rem;display:block"></i>No matches between these players.</div>
+{% endif %}
+
+{% else %}
+<div class="empty"><i class="fas fa-scale-balanced"></i><p>Select two players to compare.</p></div>
+{% endif %}
+{% endblock %}

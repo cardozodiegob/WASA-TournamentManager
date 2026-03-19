@@ -1,0 +1,41 @@
+{% extends "base.html" %}{% block title %}WASA Tournaments{% endblock %}
+{% block body %}
+<div class="sr"><div class="sc"><div class="sv">{{ s.users }}</div><div class="sl">Players</div></div><div class="sc"><div class="sv">{{ s.tourneys }}</div><div class="sl">Tournaments</div></div><div class="sc"><div class="sv">{{ s.matches }}</div><div class="sl">Matches</div></div><div class="sc"><div class="sv">{{ s.clans }}</div><div class="sl">Clans</div></div></div>
+
+{% if current_tournaments %}
+<div class="ph"><div><h2 class="pt">Current Tournaments</h2></div><a href="{{ url_for('tournaments.tourneys') }}" class="btn btn-s btn-sm"><i class="fas fa-trophy"></i> All</a></div>
+<div class="cg" style="margin-bottom:2.5rem">{% for tr in current_tournaments %}<a href="{{ url_for('tournaments.t_view',tid=tr.id) }}" class="ncl"><div class="card" style="{% if tr.color_primary and tr.color_primary != '#6c5ce7' %}border-left:3px solid {{ tr.color_primary }}{% endif %}"><div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem">{% if tr.logo %}<img src="{{ url_for('static',filename='uploads/'+tr.logo) }}" style="width:40px;height:40px;border-radius:8px;object-fit:cover;border:1px solid var(--bdr)">{% endif %}<div><span class="b {% if tr.status=='upcoming' %}b-i{% elif tr.status=='active' %}b-s{% else %}b-m{% endif %}">{{ tr.status|title }}</span>{% if tr.ranked %} <span class="b b-a">Ranked</span>{% endif %}</div></div><div class="ct">{{ tr.name }}</div><div class="cm">{{ tr.game or 'General' }} · {{ tr.player_count }}/{{ tr.max_players }}</div>{% if tr.start_dt %}<p style="font-size:.85rem;color:var(--t2)">{{ tr.start_dt.strftime('%b %d, %Y %H:%M') }}</p>{% endif %}</div></a>{% endfor %}</div>
+{% endif %}
+
+<div class="home-split" style="display:grid;grid-template-columns:1fr 340px;gap:1.5rem;margin-bottom:2.5rem">
+<div>
+<div class="ph"><div><h2 class="pt">Latest News</h2></div><a href="{{ url_for('main.news_list') }}" class="btn btn-s btn-sm"><i class="fas fa-newspaper"></i> All</a></div>
+{% if news %}<div class="cg">{% for n in news %}<a href="{{ url_for('main.news_view',slug=n.slug) }}" class="ncl"><div class="card">{% if n.image %}<img src="{{ url_for('static',filename='uploads/'+n.image) }}" class="ni">{% endif %}<span class="nc">{{ n.category }}</span>{% if n.pinned %}<span class="b b-w" style="margin-left:.5rem"><i class="fas fa-thumbtack"></i></span>{% endif %}<div class="ct">{{ n.title }}</div><div class="cm"><i class="far fa-clock"></i> {{ n.created_at.strftime('%b %d, %Y') }} · {{ n.author.name() }}</div>{% if n.summary %}<p class="ns">{{ n.summary }}</p>{% endif %}</div></a>{% endfor %}</div>{% else %}<div class="empty"><i class="fas fa-newspaper"></i><p>No news.</p></div>{% endif %}
+</div>
+<div>
+<div class="ph"><div><h2 class="pt" style="font-size:1.3rem"><i class="fas fa-bell"></i> Latest Alert</h2></div>{% if current_user.is_authenticated %}<a href="{{ url_for('main.my_alerts') }}" class="btn btn-s btn-sm"><i class="fas fa-bell"></i> All</a>{% endif %}</div>
+{% if home_alert %}<div class="card" style="border-left:3px solid var(--a{{ home_alert.cat[0] }}-bdr)"><div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem"><i class="fas fa-{{ 'circle-info' if home_alert.cat=='info' else 'circle-check' if home_alert.cat=='success' else 'triangle-exclamation' if home_alert.cat=='warning' else 'circle-xmark' }}" style="color:var(--a{{ home_alert.cat[0] }}-t)"></i><span style="font-size:.75rem;color:var(--tm);margin-left:auto">{{ home_alert.created_at.strftime('%b %d, %H:%M') }}</span></div><div class="ct" style="font-size:1rem">{{ home_alert.title }}</div><p style="color:var(--t2);font-size:.88rem;margin-bottom:.75rem">{{ home_alert.message }}</p>{% if home_alert.link %}<a href="{{ home_alert.link }}" class="btn btn-s btn-sm"><i class="fas fa-arrow-right"></i> View</a>{% endif %}</div>
+{% elif home_global_alert %}<div class="card" style="border-left:3px solid var(--a{{ home_global_alert.cat[0] }}-bdr)"><div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem"><i class="fas fa-bullhorn" style="color:var(--a{{ home_global_alert.cat[0] }}-t)"></i><span class="b b-m" style="font-size:.65rem">📢</span><span style="font-size:.75rem;color:var(--tm);margin-left:auto">{{ home_global_alert.created_at.strftime('%b %d, %H:%M') }}</span></div><div class="ct" style="font-size:1rem">{{ home_global_alert.title }}</div><p style="color:var(--t2);font-size:.88rem">{{ home_global_alert.message }}</p></div>
+{% else %}<div class="card" style="text-align:center;padding:2rem;color:var(--tm)"><i class="fas fa-bell-slash" style="font-size:1.5rem;margin-bottom:.5rem;display:block"></i><p style="font-size:.88rem">No alerts</p></div>{% endif %}
+</div></div>
+
+{% if recent_activity %}
+<div class="card" style="margin-bottom:2rem;padding:1.25rem">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem"><h3 style="font-weight:700;font-size:1.1rem"><i class="fas fa-stream" style="color:var(--acc)"></i> Recent Activity</h3><a href="{{ url_for('main.activity_feed') }}" class="btn btn-s btn-sm">All</a></div>
+<div style="display:flex;flex-direction:column;gap:.4rem">
+{% for a in recent_activity %}
+<div style="display:flex;align-items:center;gap:.6rem;padding:.35rem 0;{% if not loop.last %}border-bottom:1px solid var(--bdr){% endif %}">
+<i class="fas fa-{{ a.icon }}" style="color:var(--a{{ a.color[0] if a.color in ['info','success','warn','danger'] else 'i' }}-t);font-size:.8rem;min-width:16px;text-align:center"></i>
+<div style="flex:1;font-size:.82rem">{% if a.user %}<a href="{{ url_for('main.prof',u=a.user.username) }}" style="font-weight:600">{{ a.user.name() }}</a> {% endif %}{{ a.detail }}</div>
+<div style="font-size:.68rem;color:var(--tm);white-space:nowrap">{{ a.created_at.strftime('%b %d %H:%M') }}</div>
+</div>
+{% endfor %}
+</div></div>
+{% endif %}
+
+
+<div class="ph"><div><h2 class="pt">Top Players</h2></div><a href="{{ url_for('main.board') }}" class="btn btn-s btn-sm"><i class="fas fa-ranking-star"></i> All</a></div>
+<div class="card"><table class="dt"><thead><tr><th>#</th><th>Player</th><th>Rank</th><th>ELO</th><th>W/L/D</th><th>WR</th></tr></thead><tbody>
+{% for p in top %}<tr><td style="font-weight:700;color:var(--acc)">{{ loop.index }}</td><td><a href="{{ url_for('main.prof',u=p.username) }}" style="display:flex;align-items:center;gap:.5rem">{% if p.avatar %}<img src="{{ url_for('static',filename='uploads/'+p.avatar) }}" style="width:28px;height:28px;border-radius:50%;object-fit:cover">{% else %}<img src="{{ url_for('static',filename='placeholder_avatar.svg') }}" style="width:28px;height:28px;border-radius:50%;object-fit:cover">{% endif %}{% if p.country %}{{ country_flags.get(p.country,'') }} {% endif %}{{ p.name() }}</a></td>
+<td><span class="rd"><span class="b b-r {% if p.is_placement %}b-u{% else %}b-a{% endif %}" style="{% if not p.is_placement %}background:{{ p.rank_color }}22;color:{{ p.rank_color }}{% endif %}">{{ p.rank_title }}</span>{% if p.is_placement %}<span class="pl">({{ p.placement_left }})</span>{% endif %}</span></td><td style="font-weight:600">{{ p.elo }}</td><td>{{ p.r_wins }}/{{ p.r_losses }}/{{ p.r_draws }}</td><td>{{ p.ranked_wr }}%</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

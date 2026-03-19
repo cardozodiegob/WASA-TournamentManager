@@ -1,0 +1,39 @@
+{% extends "base.html" %}{% block title %}Bet History{% endblock %}{% block body %}
+<div class="ph"><div><h2 class="pt"><i class="fas fa-dice"></i> Bet History</h2><p class="ps">Your wagers</p></div></div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.75rem;margin-bottom:1.5rem">
+<div class="card" style="padding:.75rem;text-align:center"><div style="font-size:1.3rem;font-weight:700">{{ total_bets }}</div><div style="color:var(--t2);font-size:.75rem">Total Bets</div></div>
+<div class="card" style="padding:.75rem;text-align:center"><div style="font-size:1.3rem;font-weight:700;color:var(--ok)">{{ wins }}</div><div style="color:var(--t2);font-size:.75rem">Wins</div></div>
+<div class="card" style="padding:.75rem;text-align:center"><div style="font-size:1.3rem;font-weight:700;color:var(--err)">{{ losses }}</div><div style="color:var(--t2);font-size:.75rem">Losses</div></div>
+<div class="card" style="padding:.75rem;text-align:center"><div style="font-size:1.3rem;font-weight:700">{{ total_wagered }} 🪙</div><div style="color:var(--t2);font-size:.75rem">Total Wagered</div></div>
+<div class="card" style="padding:.75rem;text-align:center"><div style="font-size:1.3rem;font-weight:700;color:{% if net_profit >= 0 %}var(--ok){% else %}var(--err){% endif %}">{{ '+' if net_profit > 0 }}{{ net_profit }} 🪙</div><div style="color:var(--t2);font-size:.75rem">Net Profit/Loss</div></div>
+</div>
+
+{% if open_matches %}
+<div class="ph"><div><h2 class="pt"><i class="fas fa-coins" style="color:var(--acc)"></i> Open for Betting</h2><p class="ps">Place your bets on upcoming matches</p></div></div>
+<div class="cg" style="margin-bottom:2rem">{% for m in open_matches %}<a href="{{ url_for('matches.match_view',mid=m.id) }}" class="ncl"><div class="card" style="border-left:3px solid var(--acc)">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+<span class="b {% if m.state=='scheduled' %}b-i{% elif m.state=='accepted' %}b-w{% else %}b-m{% endif %}">{{ m.state|title }}</span>
+{% if m.ranked %}<span class="b b-a">Ranked</span>{% endif %}
+{% if m.tourney_id %}<span class="b b-i">Tourney</span>{% endif %}
+{% if m.stake %}<span class="b b-w">🪙 {{ m.stake }}</span>{% endif %}
+</div>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem">
+<div style="text-align:center;flex:1"><span style="font-weight:600">{{ m.p1.name() }}</span><div style="font-size:.75rem;color:var(--tm)">ELO {{ m.p1.elo }}</div></div>
+<div style="font-size:1.1rem;font-weight:800;color:var(--acc)">vs</div>
+<div style="text-align:center;flex:1"><span style="font-weight:600">{{ m.p2.name() }}</span><div style="font-size:.75rem;color:var(--tm)">ELO {{ m.p2.elo }}</div></div>
+</div>
+{% if m.scheduled_at %}<div style="font-size:.78rem;color:var(--tm);margin-top:.4rem;text-align:center"><i class="far fa-clock"></i> {{ m.scheduled_at.strftime('%b %d, %Y %H:%M') }}</div>{% endif %}
+</div></a>{% endfor %}</div>
+{% endif %}
+{% if bets %}<div class="card" style="overflow-x:auto"><table class="dt"><thead><tr><th>Date</th><th>Match</th><th>Pick</th><th>Wager</th><th>Status</th><th>Payout</th><th>P/L</th></tr></thead><tbody>
+{% for b in bets %}<tr><td style="white-space:nowrap">{{ b.created_at.strftime('%b %d, %H:%M') }}</td>
+<td><a href="{{ url_for('matches.match_view',mid=b.match_id) }}">{{ b.match.p1.name() }} vs {{ b.match.p2.name() }}</a></td>
+<td>{{ b.predicted_winner.name() }}</td>
+<td>{{ b.amount }} 🪙</td>
+<td><span class="b {% if b.status=='won' %}b-ok{% elif b.status=='lost' %}b-err{% elif b.status=='refunded' %}b-w{% else %}b-i{% endif %}">{{ b.status }}</span></td>
+<td style="color:{% if b.payout and b.payout > 0 %}var(--ok){% else %}var(--t2){% endif %}">{{ b.payout or 0 }} 🪙</td>
+<td style="font-weight:700;color:{% if b.status=='won' %}var(--ok){% elif b.status=='lost' %}var(--err){% else %}var(--t2){% endif %}">{% if b.status=='won' %}+{{ (b.payout or 0) - b.amount }}{% elif b.status=='lost' %}-{{ b.amount }}{% elif b.status=='refunded' %}0{% else %}-{% endif %}</td></tr>
+{% endfor %}</tbody></table></div>
+{% if tp > 1 %}<div style="display:flex;justify-content:center;gap:.5rem;margin-top:1.5rem">{% if pg > 1 %}<a href="{{ url_for('economy.bet_history',page=pg-1) }}" class="btn btn-s btn-sm">&laquo; Prev</a>{% endif %}<span style="padding:.4rem .8rem;color:var(--t2)">Page {{ pg }} / {{ tp }}</span>{% if pg < tp %}<a href="{{ url_for('economy.bet_history',page=pg+1) }}" class="btn btn-s btn-sm">Next &raquo;</a>{% endif %}</div>{% endif %}
+{% else %}<div class="empty"><i class="fas fa-dice"></i><p>No bets placed yet.</p></div>{% endif %}
+{% endblock %}

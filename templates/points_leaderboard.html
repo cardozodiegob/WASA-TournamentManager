@@ -1,0 +1,10 @@
+{% extends "base.html" %}{% block title %}PongCoin Leaderboard{% endblock %}{% block body %}
+<div class="ph"><div><h2 class="pt"><i class="fas fa-coins"></i> PongCoin Leaderboard</h2><p class="ps">Richest players</p></div><a href="{{ url_for('economy.points_history') }}" class="btn btn-s btn-sm"><i class="fas fa-history"></i> My History</a></div>
+{% if users %}<div class="card" style="overflow-x:auto"><table class="dt"><thead><tr><th>#</th><th>Player</th><th>PongCoins</th></tr></thead><tbody>
+{% for u in users %}<tr><td style="font-weight:700;color:{% if loop.index==1 %}var(--warn){% elif loop.index==2 %}var(--tm){% elif loop.index==3 %}#cd7f32{% else %}var(--t2){% endif %}">{{ loop.index + offset }}</td>
+<td><a href="{{ url_for('main.prof',u=u.username) }}" style="font-weight:700">{{ u.name() }}</a></td>
+<td style="font-weight:700;color:var(--ok)">{{ u.points }} 🪙</td></tr>
+{% endfor %}</tbody></table></div>
+{% if tp > 1 %}<div style="display:flex;justify-content:center;gap:.5rem;margin-top:1.5rem">{% if pg > 1 %}<a href="{{ url_for('economy.points_leaderboard',page=pg-1) }}" class="btn btn-s btn-sm">&laquo; Prev</a>{% endif %}<span style="padding:.4rem .8rem;color:var(--t2)">Page {{ pg }} / {{ tp }}</span>{% if pg < tp %}<a href="{{ url_for('economy.points_leaderboard',page=pg+1) }}" class="btn btn-s btn-sm">Next &raquo;</a>{% endif %}</div>{% endif %}
+{% else %}<div class="empty"><i class="fas fa-coins"></i><p>No players with PongCoins yet.</p></div>{% endif %}
+{% endblock %}

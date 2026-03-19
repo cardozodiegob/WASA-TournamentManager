@@ -1,0 +1,53 @@
+{% extends "base.html" %}{% block title %}Result{% endblock %}{% block body %}<div style="max-width:500px;margin:0 auto"><h2 class="pt" style="margin-bottom:1.5rem">Submit Result</h2><p class="ps" style="margin-bottom:.5rem">vs {{ opp.name() }}</p><p style="margin-bottom:1rem"><span class="b {% if c.ranked %}b-a{% else %}b-m{% endif %}">{{ 'Ranked' if c.ranked else 'Unranked' }}</span>{% if c.stake %} <span class="b b-w">🪙 Stake: {{ c.stake }} each</span>{% endif %}{% if c.msg %} <span style="color:var(--t2);font-size:.85rem">· "{{ c.msg }}"</span>{% endif %}</p>
+
+<div class="card" style="padding:2rem;margin-bottom:1.5rem">
+<h3 style="font-weight:700;margin-bottom:1rem">Submit Scores</h3>
+<form method="POST">{{ form.hidden_tag() }}<input type="hidden" name="submit_type" value="normal">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem"><div class="fg"><label class="fl">Your Score</label>{{ form.my_score(class="fi") }}</div><div class="fg"><label class="fl">Opp Score</label>{{ form.opp_score(class="fi") }}</div></div>
+<div class="fg"><label class="fl">Date Played</label><input type="datetime-local" name="played_at" class="fi" value="{{ now_utc }}"></div>
+<div class="fg" style="display:flex;align-items:center;gap:.5rem">{{ form.draw() }} <label>Draw</label></div>
+<div class="fg"><label class="fl">Notes</label>{{ form.notes(class="ft",style="min-height:60px") }}</div>
+
+<div style="margin-bottom:1rem">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
+<label class="fl" style="margin-bottom:0"><i class="fas fa-table-tennis-paddle-ball"></i> Set Scores (optional)</label>
+<button type="button" id="addSetBtn" class="btn btn-s btn-sm"><i class="fas fa-plus"></i> Add Set</button>
+</div>
+<div id="setRows"></div>
+</div>
+
+<button type="submit" class="btn btn-p btn-bl">Submit</button>
+</form></div>
+
+<div class="card" style="padding:2rem;border-left:3px solid var(--warn)">
+<h3 style="font-weight:700;margin-bottom:.5rem;color:var(--warn)"><i class="fas fa-user-clock"></i> Opponent No-Show?</h3>
+<p style="font-size:.85rem;color:var(--t2);margin-bottom:1rem">If your opponent didn't show up, report it here.</p>
+<form method="POST"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="submit_type" value="noshow">
+<div class="fg"><label class="fl">Reason</label><textarea name="noshow_reason" class="ft" style="min-height:60px" placeholder="e.g. Waited 15 minutes, opponent never showed" required></textarea></div>
+<button type="submit" class="btn btn-w btn-bl" onclick="return confirm('Report no-show?')"><i class="fas fa-user-clock"></i> Report No-Show</button>
+</form></div>
+
+</div>{% endblock %}{% block js %}
+<script>
+(function(){
+var cnt=0,max=7,rows=document.getElementById('setRows'),btn=document.getElementById('addSetBtn');
+btn.addEventListener('click',function(){
+if(cnt>=max)return;
+cnt++;
+var d=document.createElement('div');
+d.style.cssText='display:flex;gap:.5rem;align-items:center;margin-bottom:.5rem';
+d.innerHTML='<span style="font-weight:600;min-width:50px;font-size:.85rem">Set '+cnt+'</span>'+
+'<input type="number" name="set_p1_points[]" class="fi" min="0" value="0" style="flex:1" placeholder="Your Pts">'+
+'<input type="number" name="set_p2_points[]" class="fi" min="0" value="0" style="flex:1" placeholder="Opp Pts">'+
+'<button type="button" class="btn btn-d btn-sm" style="padding:.3rem .5rem" onclick="this.parentNode.remove();renum()">✕</button>';
+rows.appendChild(d);
+if(cnt>=max)btn.disabled=true;
+});
+window.renum=function(){
+var ch=rows.children;cnt=ch.length;
+for(var i=0;i<ch.length;i++)ch[i].querySelector('span').textContent='Set '+(i+1);
+btn.disabled=cnt>=max;
+};
+})();
+</script>
+{% endblock %}

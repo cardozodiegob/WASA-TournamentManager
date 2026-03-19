@@ -1,0 +1,66 @@
+{% extends "base.html" %}{% block title %}Seasons{% endblock %}{% block body %}
+<div class="ph"><div><h2 class="pt"><i class="fas fa-calendar-alt"></i> Season Manager</h2><p class="ps">Manage competitive seasons</p></div></div>
+
+{% if active_season %}
+<div class="card" style="margin-bottom:1.5rem;border-left:3px solid var(--ok);padding:1.5rem">
+<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem">
+<div>
+<h3 style="font-weight:700"><span class="b b-s"><i class="fas fa-play"></i> Active</span> {{ active_season.name }}</h3>
+<div style="color:var(--t2);font-size:.88rem;margin-top:.25rem">Season #{{ active_season.number }} · Started {{ active_season.started_at.strftime('%b %d, %Y %H:%M') }} · By {{ active_season.creator.name() }}</div>
+{% if active_season.notes %}<p style="color:var(--tm);font-size:.85rem;margin-top:.5rem">{{ active_season.notes }}</p>{% endif %}
+</div>
+<div style="display:flex;gap:.5rem">
+<form method="POST" action="{{ url_for('admin.adm_season_end') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-w" onclick="return confirm('END the current season? This will:\n\n• Archive all player standings\n• Reset all ELO to 1200\n• Reset all W/L/D stats\n• Reset all streaks\n• Clear ELO history\n\nAll match history and tournament data will be preserved.\n\nThis CANNOT be undone!')"><i class="fas fa-flag-checkered"></i> End Season</button></form>
+</div>
+</div>
+</div>
+
+<div class="sr">
+<div class="sc"><div class="sv">{{ stats.players }}</div><div class="sl">Active Players</div></div>
+<div class="sc"><div class="sv">{{ stats.matches }}</div><div class="sl">Season Matches</div></div>
+<div class="sc"><div class="sv">{{ stats.tournaments }}</div><div class="sl">Season Tournaments</div></div>
+<div class="sc"><div class="sv">{{ stats.avg_elo }}</div><div class="sl">Avg ELO</div></div>
+</div>
+
+<div class="card" style="margin-bottom:1.5rem"><h3 style="font-weight:700;margin-bottom:1rem">Current Top 10</h3>
+<table class="dt"><thead><tr><th>#</th><th>Player</th><th>ELO</th><th>Rank</th><th>W/L/D</th><th>WR</th></tr></thead><tbody>
+{% for p in top_players %}<tr>
+<td style="font-weight:700;color:var(--acc)">{{ loop.index }}</td>
+<td><a href="{{ url_for('main.prof',u=p.username) }}">{% if p.country %}{{ country_flags.get(p.country,'') }} {% endif %}{{ p.name() }}</a></td>
+
+<td style="font-weight:700">{{ p.elo }}</td>
+<td><span class="b b-r" style="background:{{ p.rank_color }}22;color:{{ p.rank_color }}">{{ p.rank_title }}</span></td>
+<td>{{ p.r_wins }}/{{ p.r_losses }}/{{ p.r_draws }}</td>
+<td>{{ p.ranked_wr }}%</td>
+</tr>{% endfor %}</tbody></table></div>
+
+{% else %}
+<div class="card" style="margin-bottom:1.5rem;padding:2rem">
+<h3 style="font-weight:700;margin-bottom:1rem"><i class="fas fa-plus" style="color:var(--acc);margin-right:.4rem"></i> Start New Season</h3>
+<form method="POST" action="{{ url_for('admin.adm_season_start') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div class="fg"><label class="fl">Season Name</label><input type="text" name="name" class="fi" placeholder="e.g. Season 2 — Spring 2026" required maxlength="128"></div>
+<div class="fg"><label class="fl">Notes (optional)</label><textarea name="notes" class="ft" style="min-height:60px" placeholder="What's new this season?"></textarea></div>
+<button type="submit" class="btn btn-p btn-bl" onclick="return confirm('Start a new season?')"><i class="fas fa-play"></i> Start Season</button>
+</form>
+</div>
+{% endif %}
+
+{% if past_seasons %}
+<h3 class="pt" style="font-size:1.3rem;margin-bottom:1rem">Past Seasons</h3>
+<div style="display:flex;flex-direction:column;gap:.75rem">
+{% for s in past_seasons %}
+<div class="card" style="padding:1.25rem">
+<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem">
+<div>
+<div style="font-weight:700;font-size:1.05rem">{{ s.name }}</div>
+<div style="color:var(--tm);font-size:.82rem">Season #{{ s.number }} · {{ s.started_at.strftime('%b %d, %Y') }}{% if s.ended_at %} → {{ s.ended_at.strftime('%b %d, %Y') }}{% endif %} · {{ s.archives.count() }} players archived</div>
+{% if s.notes %}<p style="color:var(--t2);font-size:.85rem;margin-top:.25rem">{{ s.notes }}</p>{% endif %}
+</div>
+<a href="{{ url_for('admin.adm_season_view',sid=s.id) }}" class="btn btn-s btn-sm"><i class="fas fa-eye"></i> View</a>
+</div>
+</div>
+{% endfor %}
+</div>
+{% endif %}
+
+{% endblock %}

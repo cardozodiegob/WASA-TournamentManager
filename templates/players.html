@@ -1,0 +1,31 @@
+{% extends "base.html" %}{% block title %}Players{% endblock %}{% block body %}
+<div class="ph"><div><h2 class="pt">Find Players</h2><p class="ps">{{ total }} players found</p></div></div>
+<div class="card" style="margin-bottom:1.5rem;padding:1rem"><form method="GET"><div class="fbar">
+<div class="fg"><label class="fl">Name</label><input type="text" name="q" class="fi" placeholder="Search…" value="{{ q }}"></div>
+<div class="fg"><label class="fl">Rank</label><select name="rank" class="fs"><option value="">All Ranks</option>{% for r in ranks %}<option value="{{ r }}" {% if frank==r %}selected{% endif %}>{{ r }}</option>{% endfor %}</select></div>
+<div class="fg"><label class="fl">Clan</label><select name="clan" class="fs"><option value="">All Clans</option>{% for c in clans %}<option value="{{ c.id }}" {% if fclan==c.id %}selected{% endif %}>[{{ c.tag }}] {{ c.name }}</option>{% endfor %}</select></div>
+<div class="fg"><label class="fl">Min ELO</label><input type="number" name="elo_min" class="fi" placeholder="0" value="{{ elo_min or '' }}"></div>
+<div class="fg"><label class="fl">Max ELO</label><input type="number" name="elo_max" class="fi" placeholder="5000" value="{{ elo_max or '' }}"></div>
+<div class="fg"><label class="fl">Min Matches</label><input type="number" name="min_matches" class="fi" placeholder="0" value="{{ min_matches or '' }}"></div>
+<div class="fg"><label class="fl">Sort By</label><select name="sort" class="fs"><option value="elo" {% if sort=='elo' %}selected{% endif %}>ELO ↓</option><option value="elo_asc" {% if sort=='elo_asc' %}selected{% endif %}>ELO ↑</option><option value="name" {% if sort=='name' %}selected{% endif %}>Name</option><option value="matches" {% if sort=='matches' %}selected{% endif %}>Total Matches</option><option value="winrate" {% if sort=='winrate' %}selected{% endif %}>Ranked WR</option><option value="unranked" {% if sort=='unranked' %}selected{% endif %}>Unranked Matches</option><option value="uwinrate" {% if sort=='uwinrate' %}selected{% endif %}>Unranked WR</option><option value="newest" {% if sort=='newest' %}selected{% endif %}>Newest</option></select></div>
+<div class="fg" style="flex:0"><button type="submit" class="btn btn-p btn-sm" style="margin-top:1.5rem"><i class="fas fa-search"></i></button></div>
+<div class="fg" style="flex:0"><a href="{{ url_for('main.find_players') }}" class="btn btn-s btn-sm" style="margin-top:1.5rem"><i class="fas fa-times"></i></a></div>
+</div></form></div>
+{% if us %}<div class="card" style="overflow-x:auto"><table class="dt"><thead><tr><th>#</th><th>Player</th><th>Form</th><th>Rank</th><th>ELO</th><th>Clan</th><th>Ranked</th><th>R-WR</th><th>Unranked</th><th>U-WR</th><th>Total</th></tr></thead><tbody>
+{% for u in us %}<tr>
+<td style="font-weight:700;color:var(--acc)">{{ loop.index + off }}</td>
+<td><a href="{{ url_for('main.prof',u=u.username) }}" style="display:flex;align-items:center;gap:.5rem">{% if u.avatar %}<img src="{{ url_for('static',filename='uploads/'+u.avatar) }}" style="width:28px;height:28px;border-radius:50%;object-fit:cover">{% else %}<img src="{{ url_for('static',filename='placeholder_avatar.svg') }}" style="width:28px;height:28px;border-radius:50%;object-fit:cover">{% endif %}{% if u.country %}{{ country_flags.get(u.country,'') }} {% endif %}{{ u.name() }}</a></td>
+<td>{% set f=user_forms[u.id] %}<span style="color:{{f.color}};font-weight:600;white-space:nowrap">{{f.arrow}} {{f.label}}</span></td>
+
+<td><span class="b b-r {% if u.is_placement %}b-u{% else %}b-a{% endif %}" style="{% if not u.is_placement %}background:{{ u.rank_color }}22;color:{{ u.rank_color }}{% endif %}">{{ u.rank_title }}</span></td>
+<td style="font-weight:600">{{ u.elo }}</td>
+<td>{% set cl=u.get_clan() %}{% if cl %}<a href="{{ url_for('clans.clan_view',cid=cl.id) }}">[{{ cl.tag }}]</a>{% else %}–{% endif %}</td>
+<td>{{ u.r_wins }}W/{{ u.r_losses }}L/{{ u.r_draws }}D</td>
+<td>{{ u.ranked_wr }}%</td>
+<td>{{ u.u_wins }}W/{{ u.u_losses }}L/{{ u.u_draws }}D</td>
+<td>{{ u.unranked_wr }}%</td>
+<td style="font-weight:600">{{ u.total_matches }}</td>
+</tr>{% endfor %}</tbody></table></div>
+{% if tp > 1 %}<div style="display:flex;justify-content:center;gap:.5rem;margin-top:1.5rem">{% for p in range(1,tp+1) %}<a href="{{ url_for('main.find_players',q=q,rank=frank,clan=fclan,elo_min=elo_min,elo_max=elo_max,min_matches=min_matches,sort=sort,page=p) }}" class="btn btn-sm {% if p==pg %}btn-p{% else %}btn-s{% endif %}">{{ p }}</a>{% endfor %}</div>{% endif %}
+{% elif q or frank or fclan or elo_min or elo_max or min_matches %}<div class="empty"><i class="fas fa-search"></i><p>No matches.</p></div>{% else %}<div class="empty"><i class="fas fa-users"></i><p>Use filters above.</p></div>{% endif %}
+{% endblock %}

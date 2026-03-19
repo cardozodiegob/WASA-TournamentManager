@@ -1,0 +1,11 @@
+{% extends "base.html" %}{% block title %}Predictions Leaderboard{% endblock %}{% block body %}
+<div class="ph"><div><h2 class="pt"><i class="fas fa-chart-line"></i> Predictions Leaderboard</h2><p class="ps">Top predictors (min 10 resolved predictions)</p></div></div>
+{% if leaders %}<div class="card" style="overflow-x:auto"><table class="dt"><thead><tr><th>#</th><th>Player</th><th>Total</th><th>Correct</th><th>Accuracy</th></tr></thead><tbody>
+{% for l in leaders %}<tr><td style="font-weight:700;color:{% if loop.index + offset == 1 %}var(--warn){% elif loop.index + offset == 2 %}var(--tm){% elif loop.index + offset == 3 %}#cd7f32{% else %}var(--t2){% endif %}">{{ loop.index + offset }}</td>
+<td><a href="{{ url_for('main.prof',u=l.username) }}" style="font-weight:700">{{ l.display_name or l.username }}</a></td>
+<td>{{ l.total }}</td><td style="color:var(--ok);font-weight:700">{{ l.correct }}</td>
+<td style="font-weight:700;color:var(--acc)">{{ "%.1f"|format(l.pct) }}%</td></tr>
+{% endfor %}</tbody></table></div>
+{% if tp > 1 %}<div style="display:flex;justify-content:center;gap:.5rem;margin-top:1.5rem">{% if pg > 1 %}<a href="{{ url_for('social.prediction_leaderboard',page=pg-1) }}" class="btn btn-s btn-sm">&laquo; Prev</a>{% endif %}<span style="padding:.4rem .8rem;color:var(--t2)">Page {{ pg }} / {{ tp }}</span>{% if pg < tp %}<a href="{{ url_for('social.prediction_leaderboard',page=pg+1) }}" class="btn btn-s btn-sm">Next &raquo;</a>{% endif %}</div>{% endif %}
+{% else %}<div class="empty"><i class="fas fa-chart-line"></i><p>No predictors with 10+ resolved predictions yet.</p></div>{% endif %}
+{% endblock %}

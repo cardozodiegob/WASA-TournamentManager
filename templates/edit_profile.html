@@ -1,0 +1,159 @@
+{% extends "base.html" %}{% block title %}Edit Profile{% endblock %}{% block body %}<div style="max-width:700px;margin:0 auto"><h2 class="pt" style="margin-bottom:1.5rem">Edit Profile</h2>
+
+{# ===== AVATAR ===== #}
+<div class="card" style="margin-bottom:1.5rem"><h3 style="font-weight:700;margin-bottom:1rem"><i class="fas fa-camera" style="color:var(--acc);margin-right:.4rem"></i> Picture</h3><div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap">{% if current_user.avatar %}<img src="{{ url_for('static',filename='uploads/'+current_user.avatar) }}" class="pra">{% else %}<img src="{{ url_for('static',filename='placeholder_avatar.svg') }}" class="pra">{% endif %}<div><button type="button" class="btn btn-p btn-sm" id="bp"><i class="fas fa-camera"></i> Change</button></div></div><input type="file" id="fi" accept="image/*" style="display:none"></div>
+
+{# ===== PROFILE INFO ===== #}
+<div class="card" style="margin-bottom:1.5rem"><form method="POST">{{ form.hidden_tag() }}
+<h3 style="font-weight:700;margin-bottom:1rem"><i class="fas fa-user" style="color:var(--acc);margin-right:.4rem"></i> Profile Info</h3>
+<div class="fg"><label class="fl">Name</label>{{ form.display_name(class="fi") }}</div>
+<div class="fg"><label class="fl">Bio</label>{{ form.bio(class="ft") }}</div>
+
+<h3 style="font-weight:700;margin:1.5rem 0 .75rem"><i class="fas fa-palette" style="color:var(--acc);margin-right:.4rem"></i> Profile Style</h3>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+<div class="fg"><label class="fl">Banner Color</label><input type="color" name="profile_color" value="{{ current_user.profile_color or '#6c5ce7' }}" style="width:100%;height:40px;border:1px solid var(--bdr);border-radius:8px;background:var(--bg3);cursor:pointer"></div>
+<div class="fg"><label class="fl">Country</label><select name="country" class="fs">{% for code, label in countries %}<option value="{{ code }}" {% if current_user.country==code %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+</div>
+{% if user_achs %}
+<div class="fg"><label class="fl">Featured Achievement</label><select name="featured_ach_id" class="fs"><option value="">None</option>{% for a in user_achs %}<option value="{{ a.id }}" {% if current_user.featured_ach_id==a.id %}selected{% endif %}>{{ a.title }}</option>{% endfor %}</select></div>
+{% endif %}
+
+{# ===== STAT SHOWCASE ===== #}
+<h3 style="font-weight:700;margin:1.5rem 0 .5rem"><i class="fas fa-chart-bar" style="color:var(--acc);margin-right:.4rem"></i> Stat Showcase</h3>
+<p style="font-size:.82rem;color:var(--tm);margin-bottom:.75rem">Choose up to 6 stats to feature on your profile. Drag or click to reorder.</p>
+<div style="font-size:.8rem;font-weight:600;margin-bottom:.75rem;color:var(--acc)" id="showcase-counter">0/6 selected</div>
+<div id="showcase-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.6rem">
+{% for key, meta in showcase_metrics.items() %}
+<label id="sc-label-{{ key }}" style="display:flex;align-items:center;gap:.5rem;padding:.6rem .75rem;border-radius:8px;border:1px solid var(--bdr);background:var(--bg2);cursor:pointer;transition:border-color .2s,background .2s;user-select:none" data-sc-key="{{ key }}">
+<input type="checkbox" name="showcase_metrics" value="{{ key }}" {% if key in current_showcase %}checked{% endif %} style="accent-color:var(--acc);width:16px;height:16px;flex-shrink:0" data-sc-cb>
+<i class="{{ meta.icon }}" style="color:var(--acc);font-size:.85rem;flex-shrink:0"></i>
+<span style="font-size:.82rem;font-weight:500">{{ meta.label }}</span>
+</label>
+{% endfor %}
+</div>
+<input type="hidden" id="showcase-order" name="showcase_order" value="">
+
+<hr style="border-color:var(--bdr);margin:1.5rem 0"><h3 style="font-weight:700;margin-bottom:.5rem"><i class="fas fa-lock" style="color:var(--acc);margin-right:.4rem"></i> Change Password</h3>
+<p style="font-size:.82rem;color:var(--tm);margin-bottom:1rem">Leave blank to keep current password.</p>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+<div class="fg"><label class="fl">New Password</label><input type="password" class="fi" name="new_password" minlength="8" placeholder="New password"></div>
+<div class="fg"><label class="fl">Confirm</label><input type="password" class="fi" name="confirm_password" minlength="6" placeholder="Confirm"></div>
+</div>
+<button type="submit" class="btn btn-p" style="margin-top:1rem"><i class="fas fa-save"></i> Save Profile</button></form></div>
+
+{# ===== COSMETICS EQUIP ===== #}
+<div class="card" style="margin-bottom:1.5rem"><h3 style="font-weight:700;margin-bottom:1rem"><i class="fas fa-gem" style="color:var(--acc);margin-right:.4rem"></i> Cosmetics</h3>
+<p style="font-size:.82rem;color:var(--tm);margin-bottom:1rem">Equip or unequip cosmetics you own. <a href="{{ url_for('economy.shop') }}">Visit the shop</a> to get more.</p>
+{% for cat in cosmetic_categories %}
+{% set items = owned_by_cat.get(cat, []) %}
+{% set eq = equipped_by_cat.get(cat) %}
+<div style="margin-bottom:1.25rem">
+<h4 style="font-size:.9rem;font-weight:600;margin-bottom:.5rem"><i class="fas fa-caret-right" style="color:var(--acc);margin-right:.3rem"></i> {{ cat_labels.get(cat, cat) }}{% if eq %} <span class="b b-ok" style="font-size:.65rem;margin-left:.4rem">{{ eq.item.name }}</span>{% endif %}</h4>
+{% if items %}
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.75rem">
+{% for uc in items %}<div style="padding:.75rem;border-radius:8px;border:{% if uc.equipped %}2px solid var(--ok){% else %}1px solid var(--bdr){% endif %};background:var(--bg2);display:flex;flex-direction:column;gap:.4rem">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-weight:600;font-size:.85rem">{{ uc.item.name }}</span><span style="font-size:.6rem;padding:.1rem .4rem;border-radius:4px;background:{{ rarity_colors.get(uc.item.rarity,'#9e9e9e') }}22;color:{{ rarity_colors.get(uc.item.rarity,'#9e9e9e') }}">{{ uc.item.rarity|capitalize }}</span></div>
+{% if uc.item.css_data and uc.item.category not in ('badge','chat_flair','title') %}<div style="height:30px;border-radius:4px;background:var(--bg3);{{ uc.item.css_data[:uc.item.css_data.index('@keyframes')] if '@keyframes' in uc.item.css_data else uc.item.css_data }}"></div>{% elif uc.item.css_data and uc.item.category in ('badge','chat_flair') %}<div style="font-size:1.2rem;text-align:center">{{ uc.item.css_data }}</div>{% elif uc.item.css_data and uc.item.category == 'title' %}<div style="text-align:center"><span style="display:inline-block;padding:.1rem .5rem;border-radius:4px;font-size:.7rem;font-weight:700;background:var(--acc)22;color:var(--acc)">{{ uc.item.css_data }}</span></div>{% endif %}
+<form method="post" action="{{ url_for('economy.inventory_equip', uc_id=uc.id) }}" style="margin-top:auto"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<button class="btn {% if uc.equipped %}btn-s{% else %}btn-p{% endif %} btn-sm" type="submit" style="width:100%">{% if uc.equipped %}<i class="fas fa-times"></i> Unequip{% else %}<i class="fas fa-check"></i> Equip{% endif %}</button></form>
+</div>{% endfor %}
+</div>
+{% else %}<p style="font-size:.8rem;color:var(--tm)">No items owned. <a href="{{ url_for('economy.shop') }}">Browse shop</a></p>{% endif %}
+</div>
+{% endfor %}
+</div>
+
+</div>{# end max-width wrapper #}
+
+{# ===== CROP MODAL ===== #}
+<div id="cm" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);align-items:center;justify-content:center">
+<div style="background:var(--bg2);border-radius:12px;padding:1.5rem;max-width:500px;width:90%">
+<h3 style="margin-bottom:1rem">Crop Picture</h3>
+<div style="position:relative;width:100%;max-height:400px;overflow:hidden"><img id="ci" style="max-width:100%"></div>
+<div style="display:flex;gap:.5rem;margin-top:1rem;justify-content:flex-end">
+<button class="btn btn-s btn-sm" onclick="document.getElementById('cm').style.display='none'">Cancel</button>
+<button class="btn btn-p btn-sm" id="cs">Save</button>
+</div></div></div>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+<script>
+(function(){
+var fi=document.getElementById('fi'),bp=document.getElementById('bp'),cm=document.getElementById('cm'),ci=document.getElementById('ci'),cs=document.getElementById('cs'),cropper=null;
+bp.onclick=function(){fi.click()};
+fi.onchange=function(){
+  if(!fi.files[0])return;
+  var r=new FileReader();r.onload=function(e){ci.src=e.target.result;cm.style.display='flex';
+  if(cropper)cropper.destroy();
+  cropper=new Cropper(ci,{aspectRatio:1,viewMode:1,autoCropArea:.9})};r.readAsDataURL(fi.files[0])};
+cs.onclick=function(){
+  if(!cropper)return;var d=cropper.getData(true),fd=new FormData();fd.append('pic',fi.files[0]);
+  fd.append('cx',Math.round(d.x));fd.append('cy',Math.round(d.y));fd.append('cw',Math.round(d.width));fd.append('ch',Math.round(d.height));
+  fd.append('csrf_token','{{ csrf_token() }}');
+  fetch('{{ url_for("main.up_avatar") }}',{method:'POST',body:fd}).then(r=>r.json()).then(j=>{if(j.ok)location.reload();else alert(j.err||'Failed')}).catch(()=>alert('Error'));
+  cm.style.display='none'};
+})();
+</script>
+<script>
+(function(){
+  var MAX=6;
+  var cbs=document.querySelectorAll('[data-sc-cb]');
+  var counter=document.getElementById('showcase-counter');
+  // Track selection order: start with pre-checked items in their original order
+  var order=[{% for k in current_showcase %}'{{ k }}'{% if not loop.last %},{% endif %}{% endfor %}];
+
+  function updateUI(){
+    var count=order.length;
+    counter.textContent=count+'/'+MAX+' selected';
+    counter.style.color=count>=MAX?'var(--err,#e74c3c)':'var(--acc)';
+    cbs.forEach(function(cb){
+      var label=cb.closest('[data-sc-key]');
+      if(cb.checked){
+        label.style.borderColor='var(--acc)';
+        label.style.background='var(--bg3)';
+        cb.disabled=false;
+      }else{
+        label.style.borderColor='var(--bdr)';
+        label.style.background='var(--bg2)';
+        cb.disabled=count>=MAX;
+        if(cb.disabled){label.style.cursor='not-allowed';label.style.opacity='.5'}
+        else{label.style.cursor='pointer';label.style.opacity='1'}
+      }
+    });
+  }
+
+  cbs.forEach(function(cb){
+    cb.addEventListener('change',function(){
+      var key=cb.closest('[data-sc-key]').getAttribute('data-sc-key');
+      if(cb.checked){
+        if(order.length>=MAX){cb.checked=false;return;}
+        order.push(key);
+      }else{
+        order=order.filter(function(k){return k!==key;});
+      }
+      updateUI();
+    });
+  });
+
+  // On form submit, reorder the checkboxes so they submit in selection order
+  var form=cbs[0]&&cbs[0].closest('form');
+  if(form){
+    form.addEventListener('submit',function(){
+      // Remove all existing showcase_metrics hidden inputs we may have added
+      form.querySelectorAll('input[name="showcase_metrics"][type="hidden"][data-sc-order]').forEach(function(el){el.remove();});
+      // Uncheck all checkboxes so they don't submit
+      cbs.forEach(function(cb){cb.disabled=true;});
+      // Add hidden inputs in the correct order
+      order.forEach(function(key){
+        var inp=document.createElement('input');
+        inp.type='hidden';inp.name='showcase_metrics';inp.value=key;
+        inp.setAttribute('data-sc-order','1');
+        form.appendChild(inp);
+      });
+    });
+  }
+
+  updateUI();
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,150 @@
+{% extends "base.html" %}{% block title %}Edit: {{ tourney.name }}{% endblock %}{% block css %}
+<style>
+.batch-swap{background:var(--bg3);border:1px solid var(--bdr);border-radius:10px;padding:.75rem;margin-bottom:.5rem;transition:border-color .2s}
+.batch-swap:hover{border-color:var(--acc)}
+.batch-swap.modified{border-color:var(--warn);background:var(--aw-bg)}
+.swap-select{border:2px dashed var(--acc);background:var(--accs)}
+.match-swap-zone{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;padding:.75rem;background:var(--bg2);border:1px solid var(--bdr);border-radius:10px;margin-bottom:1rem}
+</style>{% endblock %}{% block body %}<div style="max-width:900px;margin:0 auto">
+<h2 class="pt" style="margin-bottom:1.5rem">Edit: {{ tourney.name }}</h2>
+
+<div class="card" style="padding:2rem;margin-bottom:1.5rem"><h3 style="font-weight:700;margin-bottom:1rem">Settings</h3>
+<form method="POST" enctype="multipart/form-data"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem"><div class="fg"><label class="fl">Name</label><input type="text" name="name" class="fi" value="{{ tourney.name }}" required></div><div class="fg"><label class="fl">Game</label><input type="text" name="game" class="fi" value="{{ tourney.game or '' }}"></div></div>
+<div class="fg"><label class="fl">Description</label><textarea name="description" class="ft" style="min-height:60px">{{ tourney.description or '' }}</textarea></div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem">
+<div class="fg"><label class="fl">Format</label><select name="fmt" class="fs"><option value="single_elimination" {% if tourney.fmt=='single_elimination' %}selected{% endif %}>Single Elim</option><option value="double_elimination" {% if tourney.fmt=='double_elimination' %}selected{% endif %}>Double Elim</option><option value="round_robin" {% if tourney.fmt=='round_robin' %}selected{% endif %}>Round Robin</option><option value="swiss" {% if tourney.fmt=='swiss' %}selected{% endif %}>Swiss</option></select></div>
+<div class="fg"><label class="fl">Max Players</label><input type="number" name="max_players" class="fi" value="{{ tourney.max_players }}" min="2" max="256"></div>
+<div class="fg"><label class="fl">Status</label><select name="status" class="fs"><option value="upcoming" {% if tourney.status=='upcoming' %}selected{% endif %}>Upcoming</option><option value="active" {% if tourney.status=='active' %}selected{% endif %}>Active</option><option value="completed" {% if tourney.status=='completed' %}selected{% endif %}>Completed</option></select></div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+<div class="fg"><label class="fl">Seeding Mode</label><select name="seeding_mode" class="fs"><option value="elo" {% if tourney.seeding_mode=='elo' %}selected{% endif %}>ELO</option><option value="experience" {% if tourney.seeding_mode=='experience' %}selected{% endif %}>Experience</option><option value="winrate" {% if tourney.seeding_mode=='winrate' %}selected{% endif %}>Win Rate</option><option value="random" {% if tourney.seeding_mode=='random' %}selected{% endif %}>Random</option></select></div>
+<div class="fg"><label class="fl">Prize</label><input type="text" name="prize" class="fi" value="{{ tourney.prize or '' }}"></div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+<div class="fg"><label class="fl">Default Series</label><select name="default_series" class="fs"><option value="bo1" {% if tourney.default_series=='bo1' %}selected{% endif %}>Best of 1</option><option value="bo3" {% if tourney.default_series=='bo3' %}selected{% endif %}>Best of 3</option><option value="bo5" {% if tourney.default_series=='bo5' %}selected{% endif %}>Best of 5</option></select></div>
+<div class="fg"><label class="fl">Start Date</label><input type="datetime-local" name="start_dt" class="fi" value="{{ tourney.start_dt.strftime('%Y-%m-%dT%H:%M') if tourney.start_dt else '' }}"></div>
+<div class="fg"><label class="fl">Reg Deadline</label><input type="datetime-local" name="reg_deadline" class="fi" value="{{ tourney.reg_deadline.strftime('%Y-%m-%dT%H:%M') if tourney.reg_deadline else '' }}"></div>
+<div class="fg"><label class="fl">Verification Timeout (days)</label><input type="number" name="verify_timeout_days" class="fi" value="{{ tourney.verify_timeout_days or 0 }}" min="0" title="Auto-verify pending matches after this many days. 0 = disabled."></div>
+</div>
+<div class="fg"><label class="fl">Rules</label><textarea name="rules" class="ft" style="min-height:60px">{{ tourney.rules or '' }}</textarea></div>
+<div class="fg" style="display:flex;align-items:center;gap:.5rem"><input type="checkbox" name="ranked" {% if tourney.ranked %}checked{% endif %}> <label>Ranked</label></div>
+<h3 style="font-weight:700;margin:1.5rem 0 .75rem"><i class="fas fa-palette"></i> Customization</h3>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+<div class="fg"><label class="fl">Primary Color</label><input type="color" name="color_primary" value="{{ tourney.color_primary or '#6c5ce7' }}" style="width:100%;height:40px;border:1px solid var(--bdr);border-radius:8px;background:var(--bg3);cursor:pointer"></div>
+<div class="fg"><label class="fl">Secondary Color</label><input type="color" name="color_secondary" value="{{ tourney.color_secondary or '#1e1e2e' }}" style="width:100%;height:40px;border:1px solid var(--bdr);border-radius:8px;background:var(--bg3);cursor:pointer"></div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+<div class="fg"><label class="fl">Logo</label><input type="file" name="logo" class="fi" accept="image/*">{% if tourney.logo %}<img src="{{ url_for('static',filename='uploads/'+tourney.logo) }}" style="width:48px;height:48px;border-radius:8px;object-fit:cover;margin-top:.5rem">{% endif %}</div>
+<div class="fg"><label class="fl">Banner</label><input type="file" name="banner_image" class="fi" accept="image/*">{% if tourney.banner_image %}<img src="{{ url_for('static',filename='uploads/'+tourney.banner_image) }}" style="width:160px;height:60px;border-radius:8px;object-fit:cover;margin-top:.5rem">{% endif %}</div>
+</div>
+<button type="submit" class="btn btn-p btn-bl"><i class="fas fa-save"></i> Save Settings</button>
+</form></div>
+
+<div class="card" style="padding:2rem;margin-bottom:1.5rem"><h3 style="font-weight:700;margin-bottom:1rem">Players ({{ tourney.player_count }})</h3>
+{% if not tourney.bracket_generated %}
+<form method="POST" action="{{ url_for('admin.adm_tourney_add_player',tid=tourney.id) }}" style="display:flex;gap:.5rem;margin-bottom:1rem"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><select name="user_id" class="fs" style="flex:1">{% for u in all_users %}<option value="{{ u.id }}">{{ u.username }} ({{ u.elo }})</option>{% endfor %}</select><button class="btn btn-p btn-sm"><i class="fas fa-plus"></i> Add</button></form>
+{% endif %}
+<table class="dt"><thead><tr><th>#</th><th>Player</th><th>ELO</th><th>Matches</th><th>WR</th>{% if not tourney.bracket_generated %}<th></th>{% endif %}</tr></thead><tbody>
+{% for p in players_sorted %}<tr><td>{{ loop.index }}</td><td><a href="{{ url_for('main.prof',u=p.username) }}">{{ p.name() }}</a></td><td style="font-weight:600">{{ p.elo }}</td><td>{{ p.total_matches }}</td><td>{{ p.ranked_wr }}%</td>{% if not tourney.bracket_generated %}<td><form method="POST" action="{{ url_for('admin.adm_tourney_remove_player',tid=tourney.id,uid=p.id) }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-d btn-sm" onclick="return confirm('Remove?')"><i class="fas fa-times"></i></button></form></td>{% endif %}</tr>{% endfor %}</tbody></table></div>
+
+{% if advice and not tourney.bracket_generated and tourney.player_count >= 2 %}
+<div class="card" style="padding:2rem;margin-bottom:1.5rem;border-left:3px solid var(--acc)">
+<h3 style="font-weight:700;margin-bottom:.75rem"><i class="fas fa-brain" style="color:var(--acc);margin-right:.4rem"></i> Bracket Advisor</h3>
+<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem">
+<span class="b b-i">{{ advice.player_count }} players</span>
+{% if advice.is_power_of_2 %}<span class="b b-s">Perfect bracket size</span>{% else %}<span class="b b-w">{{ advice.byes_needed }} byes for {{ advice.upper_pow2 }}-bracket</span>{% endif %}
+</div>
+{% for w in advice.warnings %}<div style="background:var(--aw-bg);border:1px solid var(--aw-bdr);border-radius:8px;padding:.6rem .8rem;margin-bottom:.5rem;font-size:.85rem;color:var(--aw-t)">{{ w }}</div>{% endfor %}
+<div style="display:flex;flex-direction:column;gap:.75rem;margin-top:1rem">
+{% for s in advice.suggestions %}
+<div style="background:var(--bg3);border:1px solid var(--bdr);border-radius:12px;padding:1rem;{% if loop.index==1 %}border-color:var(--acc){% endif %}">
+<div style="display:flex;justify-content:space-between;align-items:start;gap:.75rem;flex-wrap:wrap">
+<div style="flex:1"><div style="font-weight:700;font-size:.95rem;margin-bottom:.25rem">{{ s.icon }} {{ s.title }}{% if loop.index==1 %} <span class="b b-a" style="font-size:.65rem">Recommended</span>{% endif %}</div><p style="color:var(--t2);font-size:.85rem;margin:0">{{ s.desc }}</p></div>
+{% if s.action=='standard' %}<form method="POST" action="{{ url_for('admin.adm_tourney_generate',tid=tourney.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="bracket_type" value="standard"><button class="btn btn-p btn-sm" onclick="return confirm('Generate?')"><i class="fas fa-play"></i> Use</button></form>
+{% elif s.action=='play_in' %}<form method="POST" action="{{ url_for('admin.adm_tourney_generate',tid=tourney.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="bracket_type" value="play_in"><button class="btn btn-ok btn-sm" onclick="return confirm('Generate?')"><i class="fas fa-play"></i> Use</button></form>
+{% elif s.action=='round_robin' %}<form method="POST" action="{{ url_for('admin.adm_tourney_generate',tid=tourney.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="bracket_type" value="round_robin"><button class="btn btn-s btn-sm" onclick="return confirm('Generate?')"><i class="fas fa-play"></i> Use</button></form>{% endif %}
+</div></div>
+{% endfor %}</div></div>
+{% endif %}
+
+<div class="card" style="padding:2rem;margin-bottom:1.5rem"><h3 style="font-weight:700;margin-bottom:1rem">Bracket Control</h3>
+<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem">
+{% if not tourney.bracket_generated and tourney.player_count >= 2 %}<form method="POST" action="{{ url_for('admin.adm_tourney_generate',tid=tourney.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="bracket_type" value="standard"><button class="btn btn-ok btn-sm" onclick="return confirm('Generate?')"><i class="fas fa-play"></i> Standard Bracket</button></form>{% endif %}
+{% if tourney.bracket_generated %}<form method="POST" action="{{ url_for('admin.adm_tourney_reset',tid=tourney.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-d btn-sm" onclick="return confirm('Reset? All matches deleted and stats reversed!')"><i class="fas fa-undo"></i> Reset Bracket</button></form>{% endif %}
+{% if tourney.bracket_generated and tourney.status == 'active' and tourney.fmt != 'round_robin' %}
+{% set verified_in_round = tourney.matches.filter_by(round_num=tourney.current_round, state='verified').count() %}
+{% if verified_in_round > 0 %}
+<form method="POST" action="{{ url_for('admin.adm_tourney_partial_advance',tid=tourney.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-w btn-sm" onclick="return confirm('Create next-round matches for completed pairs?')"><i class="fas fa-forward"></i> Partial Advance Round</button></form>
+{% endif %}
+{% endif %}
+</div>
+<p style="color:var(--tm);font-size:.82rem">Seeding: <strong>{{ tourney.seeding_mode or 'elo' }}</strong> · Round: {{ tourney.current_round }}/{{ tourney.total_rounds }} · Status: <strong>{{ tourney.status }}</strong></p>
+</div>
+
+{% if tourney.bracket_generated %}
+<div class="card" style="padding:2rem;margin-bottom:1.5rem">
+<h3 style="font-weight:700;margin-bottom:.5rem"><i class="fas fa-exchange-alt" style="color:var(--acc);margin-right:.4rem"></i> Swap Match Positions</h3>
+<p style="color:var(--tm);font-size:.82rem;margin-bottom:1rem">Swap two entire matches between bracket positions. This changes who faces whom in future rounds. Select two matches from any round and swap them.</p>
+<form method="POST" action="{{ url_for('admin.adm_tourney_swap_matches',tid=tourney.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div style="display:flex;gap:.75rem;align-items:end;flex-wrap:wrap">
+<div class="fg" style="flex:1;min-width:200px;margin-bottom:0"><label class="fl">Match A</label><select name="match1_id" class="fs">
+{% for rnd in bracket.keys()|sort %}{% set rmatches = bracket.get(rnd, []) %}{% for m in rmatches %}{% if m.notes != 'Bye' and m.p1_id != m.p2_id %}
+<option value="{{ m.id }}">{{ tourney.round_name(rnd) }} #{{ loop.index }}: {{ m.p1.name()[:12] }} vs {{ m.p2.name()[:12] }}</option>
+{% endif %}{% endfor %}{% endfor %}
+</select></div>
+<div style="font-size:1.2rem;color:var(--acc);font-weight:800;padding-bottom:.3rem">↔</div>
+<div class="fg" style="flex:1;min-width:200px;margin-bottom:0"><label class="fl">Match B</label><select name="match2_id" class="fs">
+{% for rnd in bracket.keys()|sort %}{% set rmatches = bracket.get(rnd, []) %}{% for m in rmatches %}{% if m.notes != 'Bye' and m.p1_id != m.p2_id %}
+<option value="{{ m.id }}">{{ tourney.round_name(rnd) }} #{{ loop.index }}: {{ m.p1.name()[:12] }} vs {{ m.p2.name()[:12] }}</option>
+{% endif %}{% endfor %}{% endfor %}
+</select></div>
+<button type="submit" class="btn btn-w btn-sm" onclick="return confirm('Swap these two match positions? This changes the bracket path.')"><i class="fas fa-exchange-alt"></i> Swap</button>
+</div>
+</form>
+</div>
+
+<div class="card" style="padding:2rem"><h3 style="font-weight:700;margin-bottom:.5rem">Edit Matches</h3>
+<p style="color:var(--tm);font-size:.82rem;margin-bottom:1rem">{% if tourney.status=='completed' %}<span class="b b-w"><i class="fas fa-exclamation-triangle"></i> Completed</span> — edits won't reprocess ELO.{% else %}Setting "Verified" processes ELO and advances bracket.{% endif %}</p>
+
+{% set all_rounds = bracket.keys()|list|sort %}
+{% for rnd in all_rounds %}
+{% set rmatches = bracket.get(rnd, []) %}
+{% if rmatches %}
+<h4 style="color:var(--tm);font-size:.85rem;margin:1rem 0 .5rem">{% if rnd == 0 %}<span class="b b-w" style="margin-right:.3rem">Play-In</span>{% endif %}{{ tourney.round_name(rnd) }} <span style="font-weight:400">({{ rmatches|length }} matches)</span></h4>
+
+<form method="POST" action="{{ url_for('admin.adm_tourney_batch_edit',tid=tourney.id,rnd=rnd) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+{% for m in rmatches %}
+<div class="batch-swap" id="match-{{ m.id }}">
+<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;margin-bottom:.35rem">
+<div style="font-size:.85rem"><span style="color:var(--tm);font-weight:600">M{{ loop.index }}</span> · <span class="b {% if m.state=='verified' %}b-s{% elif m.state=='scheduled' %}b-i{% elif m.state=='pending' %}b-w{% else %}b-d{% endif %}" style="font-size:.7rem">{{ m.state }}</span>{% if m.notes=='Bye' %} <span class="b b-m" style="font-size:.7rem">Bye</span>{% elif m.notes=='Play-In' %} <span class="b b-w" style="font-size:.7rem">Play-In</span>{% endif %}{% if m.winner %} · <span style="color:var(--ok);font-size:.8rem">W: {{ m.winner.name()[:10] }}</span>{% endif %}</div>
+<div style="font-size:.85rem;font-weight:700">{{ m.p1_score }}–{{ m.p2_score }}</div>
+</div>
+{% if m.notes != 'Bye' and m.p1_id != m.p2_id %}
+<div style="display:flex;gap:.35rem;align-items:end;flex-wrap:wrap">
+<input type="hidden" name="match_ids" value="{{ m.id }}">
+<div style="display:flex;align-items:center;gap:.25rem">
+<select name="p1_{{ m.id }}" style="padding:.25rem;background:var(--bg1);border:1px solid var(--bdr);border-radius:6px;color:var(--t1);font-size:.78rem;max-width:120px" onchange="this.closest('.batch-swap').classList.add('modified')">{% for p in tourney.players.all() %}<option value="{{ p.id }}" {% if p.id==m.p1_id %}selected{% endif %}>{{ p.name()[:14] }}</option>{% endfor %}</select>
+<span style="color:var(--tm);font-size:.8rem">vs</span>
+<select name="p2_{{ m.id }}" style="padding:.25rem;background:var(--bg1);border:1px solid var(--bdr);border-radius:6px;color:var(--t1);font-size:.78rem;max-width:120px" onchange="this.closest('.batch-swap').classList.add('modified')">{% for p in tourney.players.all() %}<option value="{{ p.id }}" {% if p.id==m.p2_id %}selected{% endif %}>{{ p.name()[:14] }}</option>{% endfor %}</select>
+</div>
+<div style="display:flex;align-items:center;gap:.2rem">
+<input type="number" name="s1_{{ m.id }}" value="{{ m.p1_score }}" min="0" style="width:40px;padding:.2rem;background:var(--bg1);border:1px solid var(--bdr);border-radius:6px;color:var(--t1);text-align:center;font-size:.82rem" onchange="this.closest('.batch-swap').classList.add('modified')">
+<span style="color:var(--tm)">–</span>
+<input type="number" name="s2_{{ m.id }}" value="{{ m.p2_score }}" min="0" style="width:40px;padding:.2rem;background:var(--bg1);border:1px solid var(--bdr);border-radius:6px;color:var(--t1);text-align:center;font-size:.82rem" onchange="this.closest('.batch-swap').classList.add('modified')">
+</div>
+<select name="st_{{ m.id }}" style="padding:.2rem;background:var(--bg1);border:1px solid var(--bdr);border-radius:6px;color:var(--t1);font-size:.78rem" onchange="this.closest('.batch-swap').classList.add('modified')"><option value="scheduled" {% if m.state=='scheduled' %}selected{% endif %}>Sched</option><option value="pending" {% if m.state=='pending' %}selected{% endif %}>Pend</option><option value="verified" {% if m.state=='verified' %}selected{% endif %}>Verified</option><option value="disputed" {% if m.state=='disputed' %}selected{% endif %}>Disputed</option></select>
+</div>
+{% else %}
+<div style="font-size:.82rem;color:var(--tm);font-style:italic">{{ m.p1.name() }} — Bye (auto-advance)</div>
+{% endif %}
+</div>
+{% endfor %}
+<button type="submit" class="btn btn-p btn-sm" style="margin-top:.75rem"><i class="fas fa-save"></i> Save All {{ tourney.round_name(rnd) }}</button>
+</form>
+{% endif %}
+{% endfor %}
+</div>
+{% endif %}
+
+</div>{% endblock %}

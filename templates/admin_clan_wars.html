@@ -1,0 +1,21 @@
+{% extends "base.html" %}{% block title %}Clan Wars{% endblock %}{% block body %}<h2 class="pt" style="margin-bottom:1.5rem"><i class="fas fa-swords" style="color:var(--acc);margin-right:.4rem"></i> Clan Wars</h2>
+
+<div class="card" style="padding:1.5rem">
+<h3 style="font-weight:700;margin-bottom:1rem">All Clan Wars ({{ wars|length }})</h3>
+{% if wars %}
+<table class="dt"><thead><tr><th>ID</th><th>Clan 1</th><th>Clan 2</th><th>Status</th><th>Score</th><th>Winner</th><th>Created</th><th></th></tr></thead><tbody>
+{% for w in wars %}<tr>
+<td>{{ w.id }}</td>
+<td>[{{ w.clan1.tag }}] {{ w.clan1.name }}</td>
+<td>[{{ w.clan2.tag }}] {{ w.clan2.name }}</td>
+<td>{% if w.status == 'completed' %}<span class="b b-s">Completed</span>{% elif w.status == 'active' %}<span class="b b-m">Active</span>{% else %}<span class="b">{{ w.status }}</span>{% endif %}</td>
+<td>{{ w.clan1_wins }} – {{ w.clan2_wins }}</td>
+<td>{% if w.winner %}[{{ w.winner.tag }}] {{ w.winner.name }}{% else %}—{% endif %}</td>
+<td style="font-size:.82rem;color:var(--tm)">{{ w.created_at.strftime('%Y-%m-%d') }}</td>
+<td style="display:flex;gap:.3rem">
+<a href="{{ url_for('admin.adm_clan_war_edit',wid=w.id) }}" class="btn btn-s btn-sm" title="Edit"><i class="fas fa-pen"></i></a>
+<form method="POST" action="{{ url_for('admin.adm_clan_war_del',wid=w.id) }}" style="margin:0"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-d btn-sm" onclick="return confirm('Delete this clan war and all its matches?')" title="Delete"><i class="fas fa-trash"></i></button></form>
+</td>
+</tr>{% endfor %}</tbody></table>
+{% else %}<p style="color:var(--tm);text-align:center;padding:2rem">No clan wars found.</p>{% endif %}
+</div>{% endblock %}

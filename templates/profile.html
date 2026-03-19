@@ -1,0 +1,614 @@
+{% extends "base.html" %}{% block title %}{{ u.name() }} — WASA Tournaments{% endblock %}{% block meta %}
+<meta property="og:title" content="{{ u.name() }} — WASA Tournaments">
+<meta property="og:description" content="{{ u.rank_title }} · ELO: {{ u.elo }} · {{ u.r_wins }}W/{{ u.r_losses }}L/{{ u.r_draws }}D">
+<meta property="og:type" content="profile">
+<meta property="og:url" content="{{ request.url }}">
+{% if u.avatar %}<meta property="og:image" content="{{ request.host_url }}static/uploads/{{ u.avatar }}">{% endif %}
+<meta property="og:site_name" content="WASA Tournaments">
+{% endblock %}{% block css %}
+<style>
+/* === Task 5.1: Card-based layout & visual hierarchy === */
+.prof-banner{position:relative;border-radius:16px;padding:2rem;margin-bottom:1.5rem;overflow:hidden}
+.prof-banner::before{content:'';position:absolute;inset:0;z-index:0;opacity:.18;pointer-events:none}
+.prof-header{position:relative;z-index:1}
+.prof-name{font-size:2rem;font-weight:800;line-height:1.2}
+.prof-meta{color:var(--tm);font-size:.88rem;margin-top:.25rem}
+.prof-bio{color:var(--t2);margin-top:.5rem;font-size:.92rem}
+.prof-avatar{width:130px;height:130px;border-radius:50%;object-fit:cover;border:4px solid var(--acc);flex-shrink:0}
+.prof-stats{display:flex;gap:1.5rem;margin-top:1rem;flex-wrap:wrap}
+.prof-stat-item .prof-stat-label{color:var(--tm);font-size:.78rem;text-transform:uppercase;letter-spacing:.03em}
+.prof-stat-item .prof-stat-val{font-weight:700;font-size:1rem}
+.prof-stat-item .prof-stat-val.primary{font-size:1.4rem;color:var(--acc)}
+.prof-actions{margin-top:1rem;display:flex;gap:.5rem;flex-wrap:wrap}
+
+/* Section cards */
+.prof-section{background:var(--bgc);border:1px solid var(--bdr);border-radius:16px;padding:1.5rem;margin-bottom:1.25rem;transition:border-color .2s,box-shadow .2s}
+.prof-section:hover{border-color:color-mix(in srgb,var(--acc) 30%,var(--bdr));box-shadow:0 2px 16px rgba(108,92,231,.06)}
+.prof-section:nth-child(even){background:color-mix(in srgb,var(--bgc) 95%,var(--bg3))}
+.prof-section-title{font-weight:700;font-size:1.1rem;margin-bottom:.75rem;display:flex;align-items:center;gap:.4rem}
+.prof-section-title i{color:var(--acc)}
+
+/* === Task 5.3: Stat showcase === */
+.showcase-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.75rem;margin-bottom:1.25rem}
+.showcase-card{background:var(--bg3);border:1px solid var(--bdr);border-radius:12px;padding:1rem;text-align:center;transition:border-color .2s,transform .2s}
+.showcase-card:hover{border-color:var(--acc);transform:translateY(-2px)}
+.showcase-card .sc-icon{font-size:1.2rem;color:var(--acc);margin-bottom:.35rem}
+.showcase-card .sc-val{font-size:1.5rem;font-weight:800;color:var(--t1);line-height:1.2}
+.showcase-card .sc-label{font-size:.75rem;color:var(--tm);text-transform:uppercase;margin-top:.2rem;letter-spacing:.02em}
+
+/* === Task 5.4: Two-column ELO + matches layout === */
+.elo-matches-row{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem}
+.elo-card,.matches-card{background:var(--bgc);border:1px solid var(--bdr);border-radius:16px;padding:1.5rem;transition:border-color .2s,box-shadow .2s}
+.elo-card:hover,.matches-card:hover{border-color:color-mix(in srgb,var(--acc) 30%,var(--bdr));box-shadow:0 2px 16px rgba(108,92,231,.06)}
+.elo-chart-wrap{max-height:200px;overflow:hidden;transition:max-height .4s ease}
+.elo-chart-wrap.expanded{max-height:600px}
+.elo-toggle{background:none;border:1px solid var(--bdr);border-radius:8px;padding:.3rem .7rem;font-size:.78rem;font-weight:600;color:var(--tm);cursor:pointer;display:inline-flex;align-items:center;gap:.3rem;transition:all .2s}
+.elo-toggle:hover{color:var(--acc);border-color:var(--acc)}
+.elo-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;flex-wrap:wrap;gap:.5rem}
+
+/* H2H bar */
+.h2h-bar{display:flex;height:28px;border-radius:8px;overflow:hidden;margin:.75rem 0}
+.h2h-w1{background:var(--ok);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:#fff;min-width:28px;transition:width .3s}
+.h2h-w2{background:var(--err);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:#fff;min-width:28px;transition:width .3s}
+.h2h-dr{background:var(--warn);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:#1a1a2e;min-width:28px;transition:width .3s}
+
+/* === Task 5.2: Premium effect animations === */
+/* Particle effect */
+@keyframes prof-particle-float{
+  0%{transform:translateY(0) translateX(0);opacity:0}
+  10%{opacity:1}
+  90%{opacity:1}
+  100%{transform:translateY(-80px) translateX(20px);opacity:0}
+}
+.fx-particle{position:relative;overflow:hidden}
+.fx-particle::after{
+  content:'✦ ✧ ⬥ ✦ ✧ ⬥ ✦ ✧';
+  position:absolute;bottom:0;left:0;right:0;
+  font-size:.6rem;letter-spacing:1.2rem;color:var(--acc);
+  animation:prof-particle-float 3s ease-in-out infinite;
+  pointer-events:none;z-index:2;white-space:nowrap;overflow:hidden
+}
+
+/* Holographic effect */
+@keyframes prof-holo-shimmer{
+  0%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+  100%{background-position:0% 50%}
+}
+.fx-holographic{
+  background:linear-gradient(135deg,rgba(108,92,231,.15),rgba(116,185,255,.15),rgba(253,203,110,.15),rgba(0,184,148,.15),rgba(108,92,231,.15));
+  background-size:400% 400%;
+  animation:prof-holo-shimmer 4s ease infinite;
+}
+
+/* Glitch effect */
+@keyframes prof-glitch{
+  0%,100%{transform:translate(0)}
+  20%{transform:translate(-2px,1px)}
+  40%{transform:translate(2px,-1px)}
+  60%{transform:translate(-1px,-2px)}
+  80%{transform:translate(1px,2px)}
+}
+@keyframes prof-glitch-clip{
+  0%{clip-path:inset(0 0 85% 0)}
+  20%{clip-path:inset(40% 0 30% 0)}
+  40%{clip-path:inset(80% 0 0 0)}
+  60%{clip-path:inset(10% 0 60% 0)}
+  80%{clip-path:inset(50% 0 20% 0)}
+  100%{clip-path:inset(0 0 85% 0)}
+}
+.fx-glitch{position:relative}
+.fx-glitch::before{
+  content:attr(data-text);position:absolute;inset:0;
+  color:var(--err);opacity:.5;
+  animation:prof-glitch .3s ease-in-out infinite alternate,prof-glitch-clip 2s steps(5) infinite;
+  pointer-events:none;z-index:2;padding:inherit;overflow:hidden
+}
+
+/* Animated gradient effect */
+@keyframes prof-anim-gradient{
+  0%{background-position:0% 50%}
+  25%{background-position:50% 100%}
+  50%{background-position:100% 50%}
+  75%{background-position:50% 0%}
+  100%{background-position:0% 50%}
+}
+.fx-animated-gradient{
+  background:linear-gradient(270deg,#6c5ce7,#e17055,#fdcb6e,#00b894,#74b9ff,#6c5ce7);
+  background-size:600% 600%;
+  animation:prof-anim-gradient 6s ease infinite;
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text
+}
+
+/* Responsive */
+@media(max-width:768px){
+  .elo-matches-row{grid-template-columns:1fr}
+  .showcase-grid{grid-template-columns:repeat(2,1fr)}
+  .prof-header .prh{flex-direction:column;text-align:center}
+  .prof-stats{justify-content:center}
+  .prof-avatar{width:100px;height:100px}
+  .prof-name{font-size:1.5rem}
+  .prof-actions{justify-content:center}
+}
+</style>
+
+{# --- Cosmetic helper variables --- #}
+{% set cos_border = equipped_cosmetics.get('profile_border') or equipped_cosmetics.get('border') %}
+{% set cos_banner = equipped_cosmetics.get('profile_banner') or equipped_cosmetics.get('banner') %}
+{% set cos_background = equipped_cosmetics.get('profile_background') %}
+{% set cos_name_color = equipped_cosmetics.get('name_color') or equipped_cosmetics.get('title_color') %}
+{% set cos_name_effect = equipped_cosmetics.get('name_effect') %}
+{% set cos_badge = equipped_cosmetics.get('badge') %}
+{% set cos_chat_flair = equipped_cosmetics.get('chat_flair') %}
+{% set cos_avatar_frame = equipped_cosmetics.get('avatar_frame') %}
+{% set cos_profile_effect = equipped_cosmetics.get('profile_effect') or equipped_cosmetics.get('glow') %}
+{% set cos_title = equipped_cosmetics.get('title') %}
+
+{# --- Inject @keyframes for animated cosmetics (CSS mode only) --- #}
+{% set ns = namespace(has_keyframes=false) %}
+{% for item in [cos_border, cos_banner, cos_background, cos_name_color, cos_name_effect, cos_avatar_frame, cos_profile_effect] %}
+{% if item and item.css_data and '@keyframes' in item.css_data and (not item.effect_mode or item.effect_mode == 'css') %}{% set ns.has_keyframes = true %}{% endif %}
+{% endfor %}
+{% if ns.has_keyframes %}
+<style>
+{% for item in [cos_border, cos_banner, cos_background, cos_name_color, cos_name_effect, cos_avatar_frame, cos_profile_effect] %}
+{% if item and item.css_data and '@keyframes' in item.css_data and (not item.effect_mode or item.effect_mode == 'css') %}
+{{ item.css_data[item.css_data.index('@keyframes'):] }}
+{% endif %}
+{% endfor %}
+</style>
+{% endif %}
+{% endblock %}{% block body %}
+
+{# --- Cosmetic helper variables (must be redefined in body block due to Jinja2 scoping) --- #}
+{% set cos_border = equipped_cosmetics.get('profile_border') or equipped_cosmetics.get('border') %}
+{% set cos_banner = equipped_cosmetics.get('profile_banner') or equipped_cosmetics.get('banner') %}
+{% set cos_background = equipped_cosmetics.get('profile_background') %}
+{% set cos_name_color = equipped_cosmetics.get('name_color') or equipped_cosmetics.get('title_color') %}
+{% set cos_name_effect = equipped_cosmetics.get('name_effect') %}
+{% set cos_badge = equipped_cosmetics.get('badge') %}
+{% set cos_chat_flair = equipped_cosmetics.get('chat_flair') %}
+{% set cos_avatar_frame = equipped_cosmetics.get('avatar_frame') %}
+{% set cos_profile_effect = equipped_cosmetics.get('profile_effect') or equipped_cosmetics.get('glow') %}
+{% set cos_title = equipped_cosmetics.get('title') %}
+
+{# --- Determine premium effect classes (Task 5.2) --- #}
+{% set effect_classes = [] %}
+{% for item in [cos_border, cos_banner, cos_background, cos_profile_effect] %}
+{% if item and item.effect_type == 'particle' %}{% if effect_classes.append('fx-particle') %}{% endif %}
+{% elif item and item.effect_type == 'holographic' %}{% if effect_classes.append('fx-holographic') %}{% endif %}
+{% elif item and item.effect_type == 'glitch' %}{% if effect_classes.append('fx-glitch') %}{% endif %}
+{% elif item and item.effect_type == 'animated_gradient' %}{% if effect_classes.append('fx-animated-gradient') %}{% endif %}
+{% endif %}
+{% endfor %}
+
+{# ============================================================ #}
+{# SVG FILTER DEFS (V16)                                        #}
+{# ============================================================ #}
+{% set svg_filters = [] %}
+{% for item in [cos_border, cos_banner, cos_background, cos_profile_effect] %}
+{% if item and item.effect_mode == 'svg_filter' and item.css_data %}
+{% if svg_filters.append(item) %}{% endif %}
+{% endif %}
+{% endfor %}
+{% if svg_filters %}
+<svg style="position:absolute;width:0;height:0">
+<defs>
+{% for item in svg_filters %}
+<filter id="cosm-svg-{{ item.id }}">{{ item.css_data|safe }}</filter>
+{% endfor %}
+</defs>
+</svg>
+{% endif %}
+
+{# ============================================================ #}
+{# PROFILE BANNER / HEADER (Task 5.1)                           #}
+{# ============================================================ #}
+<div class="prof-banner {{ effect_classes|join(' ') }}" {% if cos_profile_effect and cos_profile_effect.effect_type == 'glitch' %}data-text="{{ u.name() }}"{% endif %} style="position:relative;background:linear-gradient(135deg,{{ u.profile_color or 'var(--acc)' }}22,{{ u.profile_color or 'var(--acc)' }}08);border:1px solid {{ u.profile_color or 'var(--acc)' }}33;{% if cos_banner and cos_banner.css_data and (not cos_banner.effect_mode or cos_banner.effect_mode == 'css') %}{% if '@keyframes' in cos_banner.css_data %}{{ cos_banner.css_data[:cos_banner.css_data.index('@keyframes')].strip().rstrip(';') }};{% else %}{{ cos_banner.css_data }}{% endif %}{% elif cos_banner and cos_banner.effect_mode == 'svg_filter' %}filter:url(#cosm-svg-{{ cos_banner.id }});{% endif %}{% if cos_border and cos_border.css_data and (not cos_border.effect_mode or cos_border.effect_mode == 'css') %}{% if '@keyframes' in cos_border.css_data %}{{ cos_border.css_data[:cos_border.css_data.index('@keyframes')].strip().rstrip(';') }};{% else %}{{ cos_border.css_data }}{% endif %}{% elif cos_border and cos_border.effect_mode == 'svg_filter' %}filter:url(#cosm-svg-{{ cos_border.id }});{% endif %}{% if cos_profile_effect and cos_profile_effect.css_data and (not cos_profile_effect.effect_mode or cos_profile_effect.effect_mode == 'css') %}{% if '@keyframes' in cos_profile_effect.css_data %}{{ cos_profile_effect.css_data[:cos_profile_effect.css_data.index('@keyframes')].strip().rstrip(';') }};{% else %}{{ cos_profile_effect.css_data }}{% endif %}{% elif cos_profile_effect and cos_profile_effect.effect_mode == 'svg_filter' %}filter:url(#cosm-svg-{{ cos_profile_effect.id }});{% endif %}">
+
+{# Canvas overlay elements (V16) #}
+{% for item in [cos_border, cos_banner, cos_background, cos_profile_effect] %}
+{% if item and item.effect_mode == 'canvas' and item.css_data %}
+<canvas class="cosm-canvas" data-effect="{{ item.css_data }}" style="position:absolute;inset:0;pointer-events:none;z-index:3;border-radius:inherit"></canvas>
+{% endif %}
+{% endfor %}
+
+{# Inner background layer (profile_background cosmetic) #}
+{% if cos_background and cos_background.css_data and (not cos_background.effect_mode or cos_background.effect_mode == 'css') %}
+<div style="{% if '@keyframes' in cos_background.css_data %}{{ cos_background.css_data[:cos_background.css_data.index('@keyframes')].strip().rstrip(';') }};{% else %}{{ cos_background.css_data }}{% endif %}border-radius:12px;padding:1rem;margin:-0.5rem;margin-bottom:0">
+{% elif cos_background and cos_background.effect_mode == 'svg_filter' and cos_background.css_data %}
+<div style="filter:url(#cosm-svg-{{ cos_background.id }});border-radius:12px;padding:1rem;margin:-0.5rem;margin-bottom:0">
+{% elif cos_background and cos_background.effect_mode == 'canvas' %}
+<div style="border-radius:12px;padding:1rem;margin:-0.5rem;margin-bottom:0">
+{% endif %}
+
+<div class="prof-header">
+<div class="prh" style="margin-bottom:0">
+{# Avatar with avatar_frame #}
+{% if u.avatar %}<img src="{{ url_for('static',filename='uploads/'+u.avatar) }}" class="prof-avatar" style="{% if cos_avatar_frame and cos_avatar_frame.css_data %}{% if '@keyframes' in cos_avatar_frame.css_data %}{{ cos_avatar_frame.css_data[:cos_avatar_frame.css_data.index('@keyframes')].strip().rstrip(';') }};{% else %}{{ cos_avatar_frame.css_data }}{% endif %}{% else %}border-color:{{ u.profile_color or 'var(--acc)' }};{% endif %}">
+{% else %}<img src="{{ url_for('static',filename='placeholder_avatar.svg') }}" class="prof-avatar" style="{% if cos_avatar_frame and cos_avatar_frame.css_data %}{% if '@keyframes' in cos_avatar_frame.css_data %}{{ cos_avatar_frame.css_data[:cos_avatar_frame.css_data.index('@keyframes')].strip().rstrip(';') }};{% else %}{{ cos_avatar_frame.css_data }}{% endif %}{% else %}border-color:{{ u.profile_color or 'var(--acc)' }};{% endif %}">{% endif %}
+
+<div class="pri">
+{# Username with name_color, name_effect, badge #}
+<div class="prof-name {% if cos_name_effect and cos_name_effect.effect_type == 'animated_gradient' %}fx-animated-gradient{% endif %}" style="{% if cos_name_color and cos_name_color.css_data %}{{ cos_name_color.css_data }}{% endif %}{% if cos_name_effect and cos_name_effect.css_data %}{% if '@keyframes' in cos_name_effect.css_data %}{{ cos_name_effect.css_data[:cos_name_effect.css_data.index('@keyframes')].strip().rstrip(';') }};{% else %}{{ cos_name_effect.css_data }}{% endif %}{% endif %}">{{ u.name() }}{% if cos_badge %}<span style="margin-left:.4rem;font-size:1.1rem">{% if cos_badge.image %}<img src="{{ url_for('static',filename='uploads/'+cos_badge.image) }}" style="width:22px;height:22px;vertical-align:middle;border-radius:4px;object-fit:cover">{% elif cos_badge.css_data %}{{ cos_badge.css_data }}{% endif %}</span>{% endif %}{% if u.admin %}<span class="b b-ad" style="margin-left:.5rem"><i class="fas fa-shield"></i> Admin</span>{% endif %}{% if u.featured_ach %}<span style="margin-left:.5rem;display:inline-flex;align-items:center;gap:.3rem;background:var(--accs);padding:.15rem .5rem;border-radius:6px;font-size:.75rem;font-weight:600;color:var(--acc)">{% if u.featured_ach.image %}<img src="{{ url_for('static',filename='uploads/'+u.featured_ach.image) }}" style="width:18px;height:18px;border-radius:4px;object-fit:cover">{% else %}<i class="fas fa-medal"></i>{% endif %}{{ u.featured_ach.title }}</span>{% endif %}</div>
+
+{# Title cosmetic #}
+{% if cos_title and cos_title.css_data %}<div style="margin-top:.25rem;margin-bottom:.25rem"><span style="display:inline-block;padding:.15rem .6rem;border-radius:6px;font-size:.75rem;font-weight:700;background:var(--acc)22;color:var(--acc)">{{ cos_title.css_data }}</span></div>{% endif %}
+{% if u_titles %}<div style="display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.35rem;margin-bottom:.35rem">{% for t in u_titles %}<span class="b" style="background:{{ title_colors.get(t,'#888') }}22;color:{{ title_colors.get(t,'#888') }};font-size:.7rem">{{ t }}</span>{% endfor %}</div>{% endif %}
+
+<div class="prof-meta">@{{ u.username }}{% if u.country %} · {{ country_flags.get(u.country,'') }}{% endif %} · Joined {{ u.created_at.strftime('%b %Y') }}</div>
+{% if u.bio %}<p class="prof-bio">{{ u.bio }}</p>{% endif %}
+
+{# Key stats with visual hierarchy — primary metrics larger #}
+<div class="prof-stats">
+<div class="prof-stat-item"><div class="prof-stat-label">Rank</div><div class="prof-stat-val primary rd"><span class="b b-r {% if u.is_placement %}b-u{% else %}b-a{% endif %}" style="{% if not u.is_placement %}background:{{ u.rank_color }}22;color:{{ u.rank_color }}{% endif %}">{{ u.rank_title }}</span>{% if u.is_placement %}<span class="pl">({{ u.placement_left }})</span>{% endif %}</div></div>
+<div class="prof-stat-item"><div class="prof-stat-label">ELO</div><div class="prof-stat-val primary">{{ u.elo }}</div></div>
+<div class="prof-stat-item"><div class="prof-stat-label">Form</div><div class="prof-stat-val"><span style="color:{{form.color}};font-weight:600">{{form.arrow}} {{form.label}}</span></div></div>
+<div class="prof-stat-item"><div class="prof-stat-label">Ranked</div><div class="prof-stat-val">{{ u.r_wins }}W/{{ u.r_losses }}L/{{ u.r_draws }}D ({{ u.ranked_wr }}%)</div></div>
+<div class="prof-stat-item"><div class="prof-stat-label">PongCoins</div><div class="prof-stat-val" style="color:var(--warn)">{{ u.points }} 🪙</div></div>
+<div class="prof-stat-item"><div class="prof-stat-label">Unranked</div><div class="prof-stat-val">{{ u.u_wins }}W/{{ u.u_losses }}L/{{ u.u_draws }}D</div></div>
+<div class="prof-stat-item"><div class="prof-stat-label">Streak</div><div class="prof-stat-val">{{ u.best_streak }} 🔥</div></div>
+</div>
+
+{% if current_user.is_authenticated and current_user.id != u.id %}
+<div class="prof-actions"><a href="{{ url_for('main.ch_new_to',uid=u.id) }}" class="btn btn-p btn-sm" style="background:{{ u.profile_color or 'var(--acc)' }};border-color:{{ u.profile_color or 'var(--acc)' }}"><i class="fas fa-gamepad"></i> Challenge {{ u.name() }}</a><a href="{{ url_for('main.compare_players',p1=current_user.id,p2=u.id) }}" class="btn btn-s btn-sm"><i class="fas fa-scale-balanced"></i> Compare</a><button class="btn btn-s btn-sm" onclick="window.startDMFromProfile({{ u.id }})"><i class="fas fa-envelope"></i> Send Message</button></div>
+{% endif %}
+</div>
+</div>
+</div>
+
+{% if cos_background and cos_background.css_data %}
+</div>
+{% endif %}
+</div>
+
+{# ============================================================ #}
+{# STAT SHOWCASE (Task 5.3)                                     #}
+{# ============================================================ #}
+{% if showcase_data %}
+<div class="showcase-grid">
+{% for item in showcase_data %}
+<div class="showcase-card">
+<div class="sc-icon"><i class="{{ item.icon }}"></i></div>
+<div class="sc-val">{{ item.value }}</div>
+<div class="sc-label">{{ item.label }}</div>
+</div>
+{% endfor %}
+</div>
+{% endif %}
+
+{# ============================================================ #}
+{# HEAD-TO-HEAD                                                  #}
+{# ============================================================ #}
+{% if h2h %}
+<div class="prof-section">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
+<div class="prof-section-title" style="margin-bottom:0"><i class="fas fa-people-arrows"></i> Head-to-Head</div>
+<span class="b b-m">{{ h2h.total }} match{{ 'es' if h2h.total != 1 else '' }}</span>
+</div>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.25rem">
+<div style="text-align:center;flex:1"><div style="font-weight:700;color:var(--ok);font-size:1.3rem">{{ h2h.w1 }}</div><div style="font-size:.75rem;color:var(--tm)">{{ current_user.name() }}</div></div>
+<div style="text-align:center;padding:0 1rem"><div style="font-weight:600;color:var(--warn);font-size:1.1rem">{{ h2h.draws }}</div><div style="font-size:.75rem;color:var(--tm)">Draws</div></div>
+<div style="text-align:center;flex:1"><div style="font-weight:700;color:var(--err);font-size:1.3rem">{{ h2h.w2 }}</div><div style="font-size:.75rem;color:var(--tm)">{{ u.name() }}</div></div>
+</div>
+{% if h2h.total > 0 %}
+<div class="h2h-bar">
+{% if h2h.w1 > 0 %}<div class="h2h-w1" style="width:{{ (h2h.w1/h2h.total*100)|round(1) }}%">{{ h2h.w1 }}</div>{% endif %}
+{% if h2h.draws > 0 %}<div class="h2h-dr" style="width:{{ (h2h.draws/h2h.total*100)|round(1) }}%">{{ h2h.draws }}</div>{% endif %}
+{% if h2h.w2 > 0 %}<div class="h2h-w2" style="width:{{ (h2h.w2/h2h.total*100)|round(1) }}%">{{ h2h.w2 }}</div>{% endif %}
+</div>
+{% endif %}
+<div style="display:flex;justify-content:space-around;margin-top:.75rem;flex-wrap:wrap;gap:.5rem">
+<div style="text-align:center"><div style="font-size:.75rem;color:var(--tm)">Ranked</div><div style="font-weight:600;font-size:.9rem">{{ h2h.ranked }}</div></div>
+<div style="text-align:center"><div style="font-size:.75rem;color:var(--tm)">Unranked</div><div style="font-weight:600;font-size:.9rem">{{ h2h.unranked }}</div></div>
+<div style="text-align:center"><div style="font-size:.75rem;color:var(--tm)">ELO Net</div><div style="font-weight:600;font-size:.9rem;color:{% if h2h.elo_exchanged > 0 %}var(--ok){% elif h2h.elo_exchanged < 0 %}var(--err){% else %}var(--tm){% endif %}">{{ ('+' if h2h.elo_exchanged > 0 else '') }}{{ h2h.elo_exchanged }}</div></div>
+{% if h2h.last_match %}<div style="text-align:center"><div style="font-size:.75rem;color:var(--tm)">Last Played</div><div style="font-weight:600;font-size:.9rem">{{ h2h.last_match.played_at.strftime('%b %d') }}</div></div>{% endif %}
+</div>
+{% if h2h.matches[:5] %}
+<div style="margin-top:1rem;border-top:1px solid var(--bdr);padding-top:.75rem">
+<div style="font-size:.82rem;font-weight:600;color:var(--tm);margin-bottom:.5rem">Recent H2H Matches</div>
+<table class="dt"><thead><tr><th>Date</th><th>Score</th><th>Type</th><th>Result</th><th>Δ</th></tr></thead><tbody>
+{% for m in h2h.matches[:5] %}
+{% set ip1=(m.p1_id==current_user.id) %}
+{% set ms=m.p1_score if ip1 else m.p2_score %}
+{% set os=m.p2_score if ip1 else m.p1_score %}
+{% set ed=m.elo_d1 if ip1 else m.elo_d2 %}
+<tr>
+<td style="font-size:.82rem;color:var(--tm)">{{ m.played_at.strftime('%b %d') }}</td>
+<td style="font-weight:600">{{ ms }}–{{ os }}</td>
+<td><span class="b {% if m.ranked %}b-a{% else %}b-m{% endif %}">{{ 'R' if m.ranked else 'U' }}</span></td>
+<td>{% if m.draw %}<span class="b b-w">Draw</span>{% elif m.winner_id==current_user.id %}<span class="b b-s">W</span>{% else %}<span class="b b-d">L</span>{% endif %}</td>
+<td style="font-weight:600;color:{{ 'var(--ok)' if ed>0 else 'var(--err)' if ed<0 else 'var(--tm)' }}">{{ ('+' if ed>0 else '') }}{{ ed }}</td>
+</tr>{% endfor %}</tbody></table>
+</div>
+{% endif %}
+</div>
+{% endif %}
+
+{# ============================================================ #}
+{# RIVALS                                                        #}
+{# ============================================================ #}
+{% if rivals %}
+<div class="prof-section">
+<div class="prof-section-title"><i class="fas fa-fire" style="color:var(--err)"></i> Rivals</div>
+<div style="display:flex;flex-direction:column;gap:.75rem">
+{% for r in rivals %}
+<div style="padding:.75rem;background:var(--bg2);border-radius:10px;border:1px solid var(--bdr)">
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:.5rem">
+<a href="{{ url_for('main.prof',u=r.opponent.username) }}" style="font-weight:700;font-size:1rem">{{ r.opponent.name() }}</a>
+<span class="b b-m">{{ r.total_matches }} match{{ 'es' if r.total_matches != 1 else '' }}</span>
+</div>
+<div style="display:flex;gap:1rem;flex-wrap:wrap;font-size:.85rem">
+<div><span style="color:var(--tm)">Record:</span> <span style="font-weight:600;color:var(--ok)">{{ r.wins }}W</span>–<span style="font-weight:600;color:var(--err)">{{ r.losses }}L</span>–<span style="font-weight:600;color:var(--warn)">{{ r.draws }}D</span></div>
+<div><span style="color:var(--tm)">ELO Exchanged:</span> <span style="font-weight:600">{{ r.elo_exchanged }}</span></div>
+</div>
+</div>
+{% endfor %}
+</div>
+</div>
+{% endif %}
+
+{# ============================================================ #}
+{# ENDORSEMENTS                                                  #}
+{# ============================================================ #}
+{% if endorsement_counts %}
+<div class="prof-section">
+<div class="prof-section-title"><i class="fas fa-thumbs-up"></i> Endorsements</div>
+<div style="display:flex;flex-wrap:wrap;gap:.5rem">
+{% for cat, cnt in endorsement_counts %}
+<span style="display:inline-flex;align-items:center;gap:.35rem;padding:.35rem .75rem;border-radius:20px;background:var(--acc2,rgba(108,92,231,.15));color:var(--acc);font-weight:600;font-size:.85rem;border:1px solid var(--acc)">{{ cat }} &times;{{ cnt }}</span>
+{% endfor %}
+</div>
+</div>
+{% endif %}
+
+{# ============================================================ #}
+{# SET STATISTICS                                                #}
+{# ============================================================ #}
+{% if set_stats %}
+<div class="prof-section">
+<div class="prof-section-title"><i class="fas fa-table-tennis-paddle-ball"></i> Set Statistics</div>
+<div style="display:flex;flex-wrap:wrap;gap:1rem">
+<div style="flex:1;min-width:120px;text-align:center;background:var(--bg3);border-radius:10px;padding:.75rem"><div style="font-size:.75rem;color:var(--tm)">Sets Won</div><div style="font-size:1.2rem;font-weight:700;color:var(--ok)">{{ set_stats.sets_won }}</div></div>
+<div style="flex:1;min-width:120px;text-align:center;background:var(--bg3);border-radius:10px;padding:.75rem"><div style="font-size:.75rem;color:var(--tm)">Sets Lost</div><div style="font-size:1.2rem;font-weight:700;color:var(--err)">{{ set_stats.sets_lost }}</div></div>
+<div style="flex:1;min-width:120px;text-align:center;background:var(--bg3);border-radius:10px;padding:.75rem"><div style="font-size:.75rem;color:var(--tm)">Pts Scored</div><div style="font-size:1.2rem;font-weight:700">{{ set_stats.pts_scored }}</div></div>
+<div style="flex:1;min-width:120px;text-align:center;background:var(--bg3);border-radius:10px;padding:.75rem"><div style="font-size:.75rem;color:var(--tm)">Pts Conceded</div><div style="font-size:1.2rem;font-weight:700">{{ set_stats.pts_conceded }}</div></div>
+<div style="flex:1;min-width:120px;text-align:center;background:var(--bg3);border-radius:10px;padding:.75rem"><div style="font-size:.75rem;color:var(--tm)">Avg Pts/Set</div><div style="font-size:1.2rem;font-weight:700;color:var(--acc)">{{ set_stats.avg_pts }}</div></div>
+</div>
+</div>
+{% endif %}
+
+{# ============================================================ #}
+{# ACHIEVEMENTS                                                  #}
+{# ============================================================ #}
+{% if achs %}
+<div class="prof-section">
+<div class="prof-section-title"><i class="fas fa-medal"></i> Achievements</div>
+<div class="ag">{% for a in achs %}<div class="acard">{% if a.image %}<img src="{{ url_for('static',filename='uploads/'+a.image) }}">{% else %}<div style="width:64px;height:64px;border-radius:8px;background:var(--accs);display:flex;align-items:center;justify-content:center;margin:0 auto .5rem"><i class="fas fa-medal" style="font-size:1.5rem;color:var(--acc)"></i></div>{% endif %}<div class="atitle">{{ a.title }}</div></div>{% endfor %}</div>
+</div>
+{% endif %}
+
+{# ============================================================ #}
+{# SEASON HISTORY                                                #}
+{# ============================================================ #}
+{% if past_seasons %}
+<div class="prof-section">
+<div class="prof-section-title"><i class="fas fa-calendar-alt"></i> Season History</div>
+<table class="dt"><thead><tr><th>Season</th><th>Pos</th><th>ELO</th><th>Rank</th><th>W/L/D</th></tr></thead><tbody>{% for sa in past_seasons %}<tr><td><a href="{{ url_for('seasons_bp.season_view',sid=sa.season_id) }}">{{ sa.season.name }}</a></td><td style="font-weight:700;color:var(--acc)">#{{ sa.leaderboard_pos }}</td><td style="font-weight:700">{{ sa.final_elo }}</td><td><span class="b b-r" style="background:{{ rank_color(sa.final_rank) }}22;color:{{ rank_color(sa.final_rank) }}">{{ sa.final_rank }}</span></td><td>{{ sa.r_wins }}W/{{ sa.r_losses }}L/{{ sa.r_draws }}D</td></tr>{% endfor %}</tbody></table>
+</div>
+{% endif %}
+
+{# ============================================================ #}
+{# TWO-COLUMN: ELO GRAPH + RECENT MATCHES (Task 5.4)            #}
+{# ============================================================ #}
+<div class="elo-matches-row">
+{# --- ELO Graph Card --- #}
+<div class="elo-card">
+<div class="elo-header">
+<div class="prof-section-title" style="margin-bottom:0"><i class="fas fa-chart-line"></i> ELO</div>
+<div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
+<div class="tabs" style="margin:0;border:0;padding:0">{% for p in ['week','month','4months','year','all'] %}<a href="{{ url_for('main.prof',u=u.username,period=p) }}" class="tab {% if per==p %}on{% endif %}">{{ p|title if p!='4months' else '4Mo' }}</a>{% endfor %}</div>
+<button class="elo-toggle" id="eloToggle" onclick="toggleEloChart()"><i class="fas fa-expand" id="eloToggleIcon"></i> Expand</button>
+</div>
+</div>
+<div class="elo-chart-wrap" id="eloChartWrap">
+<canvas id="ec" height="200"></canvas>
+</div>
+</div>
+
+{# --- Recent Matches Card --- #}
+<div class="matches-card">
+<div class="prof-section-title"><i class="fas fa-gamepad"></i> Recent Matches</div>
+<div style="overflow-x:auto">
+<table class="dt"><thead><tr><th>Date</th><th>Opp</th><th>Score</th><th>Type</th><th>Result</th><th>Δ</th></tr></thead><tbody>{% for m in matches %}{% set ip1=(m.p1_id==u.id) %}{% set op=m.p2 if ip1 else m.p1 %}{% set ms=m.p1_score if ip1 else m.p2_score %}{% set os=m.p2_score if ip1 else m.p1_score %}{% set ed=m.elo_d1 if ip1 else m.elo_d2 %}<tr><td>{{ m.played_at.strftime('%b %d') }}</td><td><a href="{{ url_for('main.prof',u=op.username) }}">{{ op.name() }}</a></td><td>{{ ms }}–{{ os }}</td><td><span class="b {% if m.ranked %}b-a{% else %}b-m{% endif %}">{{ 'R' if m.ranked else 'U' }}</span></td><td>{% if m.draw %}<span class="b b-w">Draw</span>{% elif m.winner_id==u.id %}<span class="b b-s">W</span>{% else %}<span class="b b-d">L</span>{% endif %}</td><td style="font-weight:600;color:{{ 'var(--ok)' if ed>0 else 'var(--err)' if ed<0 else 'var(--tm)' }}">{{ ('+' if ed>0 else '') }}{{ ed }}</td></tr>{% endfor %}</tbody></table>
+{% if not matches %}<div class="empty"><i class="fas fa-gamepad"></i><p>No matches.</p></div>{% endif %}
+</div>
+</div>
+</div>
+
+{# ============================================================ #}
+{# CANVAS EFFECT ENGINE (V16)                                    #}
+{# ============================================================ #}
+<script>
+var CANVAS_EFFECTS={
+sunburst_rays:function(cv){
+  var ctx=cv.getContext('2d'),w=cv.width,h=cv.height,angle=0;
+  function draw(){
+    ctx.clearRect(0,0,w,h);
+    ctx.save();ctx.translate(w/2,h/2);ctx.globalAlpha=0.15;
+    for(var i=0;i<12;i++){
+      ctx.rotate(Math.PI/6);
+      ctx.beginPath();ctx.moveTo(0,0);
+      var len=Math.max(w,h);
+      ctx.lineTo(len*Math.cos(angle+i*0.1),len*Math.sin(angle+i*0.1));
+      ctx.lineTo(len*Math.cos(angle+i*0.1+0.15),len*Math.sin(angle+i*0.1+0.15));
+      ctx.closePath();
+      ctx.fillStyle='hsl('+(i*30+angle*50)%360+',80%,60%)';
+      ctx.fill();
+    }
+    ctx.restore();angle+=0.005;
+    requestAnimationFrame(draw);
+  }
+  draw();
+  window.addEventListener('resize',function(){w=cv.width=cv.parentElement.offsetWidth;h=cv.height=cv.parentElement.offsetHeight;});
+},
+electric_border:function(cv){
+  var ctx=cv.getContext('2d'),w=cv.width,h=cv.height,t=0;
+  function bolt(x1,y1,x2,y2,d){
+    if(d<=0){ctx.lineTo(x2,y2);return;}
+    var mx=(x1+x2)/2+(Math.random()-0.5)*d*15;
+    var my=(y1+y2)/2+(Math.random()-0.5)*d*15;
+    bolt(x1,y1,mx,my,d-1);bolt(mx,my,x2,y2,d-1);
+  }
+  function draw(){
+    ctx.clearRect(0,0,w,h);ctx.strokeStyle='rgba(0,200,255,0.7)';ctx.lineWidth=1.5;ctx.shadowColor='#00c8ff';ctx.shadowBlur=8;
+    for(var i=0;i<4;i++){
+      var side=Math.floor(Math.random()*4),sx,sy,ex,ey;
+      if(side===0){sx=Math.random()*w;sy=0;ex=Math.random()*w;ey=0;}
+      else if(side===1){sx=w;sy=Math.random()*h;ex=w;ey=Math.random()*h;}
+      else if(side===2){sx=Math.random()*w;sy=h;ex=Math.random()*w;ey=h;}
+      else{sx=0;sy=Math.random()*h;ex=0;ey=Math.random()*h;}
+      ctx.beginPath();ctx.moveTo(sx,sy);bolt(sx,sy,ex,ey,4);ctx.stroke();
+    }
+    ctx.shadowBlur=0;t++;
+    setTimeout(function(){requestAnimationFrame(draw);},80);
+  }
+  draw();
+  window.addEventListener('resize',function(){w=cv.width=cv.parentElement.offsetWidth;h=cv.height=cv.parentElement.offsetHeight;});
+},
+fire_aura:function(cv){
+  var ctx=cv.getContext('2d'),w=cv.width,h=cv.height,ps=[];
+  for(var i=0;i<60;i++)ps.push({x:Math.random()*w,y:h+Math.random()*20,vy:-(1+Math.random()*2),vx:(Math.random()-0.5)*0.5,life:Math.random(),r:2+Math.random()*3});
+  function draw(){
+    ctx.clearRect(0,0,w,h);
+    for(var i=0;i<ps.length;i++){
+      var p=ps[i];p.x+=p.vx;p.y+=p.vy;p.life-=0.008;
+      if(p.life<=0){p.x=Math.random()*w;p.y=h+5;p.vy=-(1+Math.random()*2);p.vx=(Math.random()-0.5)*0.5;p.life=1;}
+      var a=p.life*0.6;
+      var g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*2);
+      g.addColorStop(0,'rgba(255,200,50,'+a+')');g.addColorStop(0.5,'rgba(255,100,20,'+a*0.6+')');g.addColorStop(1,'rgba(255,30,0,0)');
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r*2,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+  window.addEventListener('resize',function(){w=cv.width=cv.parentElement.offsetWidth;h=cv.height=cv.parentElement.offsetHeight;});
+},
+smoke_trail:function(cv){
+  var ctx=cv.getContext('2d'),w=cv.width,h=cv.height,ps=[];
+  for(var i=0;i<30;i++)ps.push({x:Math.random()*w,y:h+Math.random()*30,vy:-(0.3+Math.random()*0.7),vx:(Math.random()-0.5)*0.3,life:Math.random(),r:5+Math.random()*10});
+  function draw(){
+    ctx.clearRect(0,0,w,h);
+    for(var i=0;i<ps.length;i++){
+      var p=ps[i];p.x+=p.vx;p.y+=p.vy;p.r+=0.05;p.life-=0.004;
+      if(p.life<=0){p.x=Math.random()*w;p.y=h+10;p.vy=-(0.3+Math.random()*0.7);p.vx=(Math.random()-0.5)*0.3;p.life=1;p.r=5+Math.random()*10;}
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle='rgba(180,180,200,'+p.life*0.15+')';ctx.fill();
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+  window.addEventListener('resize',function(){w=cv.width=cv.parentElement.offsetWidth;h=cv.height=cv.parentElement.offsetHeight;});
+},
+matrix_rain:function(cv){
+  var ctx=cv.getContext('2d'),w=cv.width,h=cv.height,fs=12,cols=Math.floor(w/fs),drops=[];
+  for(var i=0;i<cols;i++)drops[i]=Math.random()*-100;
+  var chars='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%^&*';
+  function draw(){
+    ctx.fillStyle='rgba(0,0,0,0.05)';ctx.fillRect(0,0,w,h);
+    ctx.fillStyle='rgba(0,255,70,0.35)';ctx.font=fs+'px monospace';
+    for(var i=0;i<drops.length;i++){
+      var ch=chars[Math.floor(Math.random()*chars.length)];
+      ctx.fillText(ch,i*fs,drops[i]*fs);
+      if(drops[i]*fs>h&&Math.random()>0.975)drops[i]=0;
+      drops[i]+=0.5;
+    }
+    setTimeout(function(){requestAnimationFrame(draw);},50);
+  }
+  draw();
+  window.addEventListener('resize',function(){w=cv.width=cv.parentElement.offsetWidth;h=cv.height=cv.parentElement.offsetHeight;cols=Math.floor(w/fs);drops=[];for(var i=0;i<cols;i++)drops[i]=Math.random()*-100;});
+},
+lightning:function(cv){
+  var ctx=cv.getContext('2d'),w=cv.width,h=cv.height,timer=0;
+  function branch(x,y,angle,depth,len){
+    if(depth<=0||len<2)return;
+    var ex=x+Math.cos(angle)*len,ey=y+Math.sin(angle)*len;
+    ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(ex,ey);ctx.stroke();
+    branch(ex,ey,angle+(Math.random()-0.5)*1.2,depth-1,len*0.7);
+    if(Math.random()>0.5)branch(ex,ey,angle+(Math.random()-0.5)*1.5,depth-1,len*0.5);
+  }
+  function draw(){
+    ctx.clearRect(0,0,w,h);timer++;
+    if(timer%15===0){
+      ctx.strokeStyle='rgba(180,200,255,0.6)';ctx.lineWidth=1.5;ctx.shadowColor='#b4c8ff';ctx.shadowBlur=10;
+      var sx=Math.random()*w,sy=0;
+      branch(sx,sy,Math.PI/2+(Math.random()-0.5)*0.5,6,30+Math.random()*20);
+      ctx.shadowBlur=0;
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+  window.addEventListener('resize',function(){w=cv.width=cv.parentElement.offsetWidth;h=cv.height=cv.parentElement.offsetHeight;});
+},
+plasma_field:function(cv){
+  var ctx=cv.getContext('2d'),w=cv.width,h=cv.height,t=0;
+  var blobs=[];for(var i=0;i<5;i++)blobs.push({x:Math.random()*w,y:Math.random()*h,vx:(Math.random()-0.5)*0.8,vy:(Math.random()-0.5)*0.8,r:30+Math.random()*40,hue:Math.random()*360});
+  function draw(){
+    ctx.clearRect(0,0,w,h);t+=0.02;
+    for(var i=0;i<blobs.length;i++){
+      var b=blobs[i];b.x+=b.vx;b.y+=b.vy;b.hue=(b.hue+0.5)%360;
+      if(b.x<0||b.x>w)b.vx*=-1;if(b.y<0||b.y>h)b.vy*=-1;
+      var g=ctx.createRadialGradient(b.x,b.y,0,b.x,b.y,b.r);
+      g.addColorStop(0,'hsla('+b.hue+',80%,60%,0.15)');g.addColorStop(1,'hsla('+b.hue+',80%,60%,0)');
+      ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+  window.addEventListener('resize',function(){w=cv.width=cv.parentElement.offsetWidth;h=cv.height=cv.parentElement.offsetHeight;});
+},
+snowfall_sparkle:function(cv){
+  var ctx=cv.getContext('2d'),w=cv.width,h=cv.height,ps=[];
+  for(var i=0;i<50;i++)ps.push({x:Math.random()*w,y:Math.random()*h,vy:0.5+Math.random()*1,vx:(Math.random()-0.5)*0.3,r:1+Math.random()*3,o:0.3+Math.random()*0.5,twinkle:Math.random()*Math.PI*2});
+  function draw(){
+    ctx.clearRect(0,0,w,h);
+    for(var i=0;i<ps.length;i++){
+      var p=ps[i];p.x+=p.vx+Math.sin(p.twinkle)*0.2;p.y+=p.vy;p.twinkle+=0.03;
+      if(p.y>h){p.y=-5;p.x=Math.random()*w;}
+      if(p.x<0)p.x=w;if(p.x>w)p.x=0;
+      var a=p.o*(0.5+0.5*Math.sin(p.twinkle*3));
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,'+a+')';ctx.fill();
+      if(p.r>2){ctx.beginPath();ctx.moveTo(p.x-p.r*1.5,p.y);ctx.lineTo(p.x+p.r*1.5,p.y);ctx.moveTo(p.x,p.y-p.r*1.5);ctx.lineTo(p.x,p.y+p.r*1.5);ctx.strokeStyle='rgba(255,255,255,'+a*0.5+')';ctx.lineWidth=0.5;ctx.stroke();}
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+  window.addEventListener('resize',function(){w=cv.width=cv.parentElement.offsetWidth;h=cv.height=cv.parentElement.offsetHeight;});
+}
+};
+document.querySelectorAll('.cosm-canvas').forEach(function(c){
+  var key=c.dataset.effect;
+  if(CANVAS_EFFECTS[key]){c.width=c.parentElement.offsetWidth;c.height=c.parentElement.offsetHeight;CANVAS_EFFECTS[key](c);}
+});
+</script>
+
+{% endblock %}{% block js %}<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script><script>
+var eloChart=null;
+const c=document.getElementById('ec');
+if(c){
+  eloChart=new Chart(c,{type:'line',data:{labels:{{ elx|tojson }},datasets:[{label:'ELO',data:{{ ely|tojson }},borderColor:'#6c5ce7',backgroundColor:'rgba(108,92,231,.1)',fill:true,tension:.3,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#6b6b80',maxTicksLimit:10},grid:{color:'rgba(45,45,66,.3)'}},y:{ticks:{color:'#6b6b80'},grid:{color:'rgba(45,45,66,.3)'}}}}});
+}
+function toggleEloChart(){
+  var wrap=document.getElementById('eloChartWrap');
+  var icon=document.getElementById('eloToggleIcon');
+  var btn=document.getElementById('eloToggle');
+  var expanded=wrap.classList.toggle('expanded');
+  if(expanded){
+    icon.classList.replace('fa-expand','fa-compress');
+    btn.innerHTML='<i class="fas fa-compress" id="eloToggleIcon"></i> Collapse';
+  }else{
+    icon.classList.replace('fa-compress','fa-expand');
+    btn.innerHTML='<i class="fas fa-expand" id="eloToggleIcon"></i> Expand';
+  }
+  if(eloChart){setTimeout(function(){eloChart.resize()},420);}
+}
+</script>{% endblock %}

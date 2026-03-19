@@ -1,0 +1,39 @@
+{% extends "base.html" %}{% block title %}Bets{% endblock %}{% block body %}<h2 class="pt" style="margin-bottom:1.5rem"><i class="fas fa-dice" style="color:var(--acc);margin-right:.4rem"></i> Bets</h2>
+
+<div class="card" style="padding:1.5rem">
+<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1rem">
+<h3 style="font-weight:700;margin:0">All Bets ({{ pagination.total }})</h3>
+<form method="GET" style="display:flex;gap:.5rem;align-items:center">
+<select name="status" class="fs" style="min-width:150px" onchange="this.form.submit()">
+<option value="">All Statuses</option>
+<option value="active" {% if status == 'active' %}selected{% endif %}>Active</option>
+<option value="won" {% if status == 'won' %}selected{% endif %}>Won</option>
+<option value="lost" {% if status == 'lost' %}selected{% endif %}>Lost</option>
+<option value="refunded" {% if status == 'refunded' %}selected{% endif %}>Refunded</option>
+</select>
+{% if status %}<a href="{{ url_for('admin.adm_bets') }}" class="btn btn-s btn-sm"><i class="fas fa-times"></i></a>{% endif %}
+</form>
+</div>
+
+{% if bets %}
+<table class="dt"><thead><tr><th>ID</th><th>User</th><th>Match</th><th>Predicted</th><th>Amount</th><th>Payout</th><th>Status</th><th>Date</th><th></th></tr></thead><tbody>
+{% for b in bets %}<tr>
+<td>{{ b.id }}</td>
+<td>{{ b.user.username }}</td>
+<td><a href="{{ url_for('matches.match_view',mid=b.match_id) }}">#{{ b.match_id }}</a></td>
+<td>{{ b.predicted_winner.username }}</td>
+<td>{{ b.amount }} <i class="fas fa-coins" style="color:var(--acc);font-size:.7rem"></i></td>
+<td>{{ b.payout }}</td>
+<td>{% if b.status == 'active' %}<span class="b b-m">Active</span>{% elif b.status == 'won' %}<span class="b b-s">Won</span>{% elif b.status == 'lost' %}<span class="b b-d">Lost</span>{% elif b.status == 'refunded' %}<span class="b b-m">Refunded</span>{% else %}<span class="b">{{ b.status }}</span>{% endif %}</td>
+<td style="font-size:.82rem;color:var(--tm)">{{ b.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+<td>{% if b.status != 'refunded' %}<form method="POST" action="{{ url_for('admin.adm_bet_refund',bid=b.id) }}" style="margin:0"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-s btn-sm" onclick="return confirm('Refund {{ b.amount }} points to {{ b.user.username }}?')" title="Refund"><i class="fas fa-undo"></i></button></form>{% endif %}</td>
+</tr>{% endfor %}</tbody></table>
+
+{% if pagination.pages > 1 %}
+<div style="display:flex;justify-content:center;gap:.5rem;margin-top:1rem">
+{% if pagination.has_prev %}<a href="{{ url_for('admin.adm_bets',page=pagination.prev_num,status=status) }}" class="btn btn-s btn-sm"><i class="fas fa-chevron-left"></i></a>{% endif %}
+<span style="padding:.4rem .8rem;color:var(--tm)">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+{% if pagination.has_next %}<a href="{{ url_for('admin.adm_bets',page=pagination.next_num,status=status) }}" class="btn btn-s btn-sm"><i class="fas fa-chevron-right"></i></a>{% endif %}
+</div>{% endif %}
+{% else %}<p style="color:var(--tm);text-align:center;padding:2rem">No bets found.</p>{% endif %}
+</div>{% endblock %}

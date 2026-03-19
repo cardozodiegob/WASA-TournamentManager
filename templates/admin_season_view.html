@@ -1,0 +1,39 @@
+{% extends "base.html" %}{% block title %}{{ season.name }}{% endblock %}{% block body %}
+<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:1.5rem"><a href="{{ url_for('admin.adm_seasons') }}" style="color:var(--tm)"><i class="fas fa-arrow-left"></i></a><h2 class="pt">{{ season.name }}</h2></div>
+<div style="color:var(--tm);font-size:.88rem;margin-bottom:1.5rem">Season #{{ season.number }} · {{ season.started_at.strftime('%b %d, %Y') }}{% if season.ended_at %} → {{ season.ended_at.strftime('%b %d, %Y') }}{% endif %} · {{ archives|length }} players</div>
+{% if season.notes %}<div class="card" style="margin-bottom:1.5rem"><p style="color:var(--t2)">{{ season.notes }}</p></div>{% endif %}
+
+<div class="sr">
+<div class="sc"><div class="sv">{{ archives|length }}</div><div class="sl">Players</div></div>
+<div class="sc"><div class="sv">{{ top_elo }}</div><div class="sl">Highest ELO</div></div>
+<div class="sc"><div class="sv">{{ total_matches }}</div><div class="sl">Total Ranked</div></div>
+<div class="sc"><div class="sv">{{ avg_elo }}</div><div class="sl">Avg ELO</div></div>
+</div>
+
+{% if podium %}
+<div style="display:flex;justify-content:center;gap:1.5rem;margin-bottom:2rem;flex-wrap:wrap">
+{% for p in podium %}
+<div class="card" style="text-align:center;padding:1.5rem;min-width:180px;{% if loop.index==1 %}border:2px solid #ffd700{% elif loop.index==2 %}border:2px solid #c0c0c0{% elif loop.index==3 %}border:2px solid #cd7f32{% endif %}">
+<div style="font-size:2rem;margin-bottom:.5rem">{% if loop.index==1 %}🥇{% elif loop.index==2 %}🥈{% elif loop.index==3 %}🥉{% endif %}</div>
+<div style="font-weight:700;font-size:1.1rem"><a href="{{ url_for('main.prof',u=p.user.username) }}">{{ p.user.name() }}</a></div>
+<div style="font-size:1.5rem;font-weight:800;color:var(--acc);margin:.25rem 0">{{ p.final_elo }}</div>
+<div><span class="b b-r" style="background:{{ rank_color(p.final_rank) }}22;color:{{ rank_color(p.final_rank) }}">{{ p.final_rank }}</span></div>
+<div style="color:var(--t2);font-size:.85rem;margin-top:.5rem">{{ p.r_wins }}W/{{ p.r_losses }}L/{{ p.r_draws }}D</div>
+</div>
+{% endfor %}
+</div>
+{% endif %}
+
+<div class="card"><h3 style="font-weight:700;margin-bottom:1rem">Final Standings</h3>
+<table class="dt"><thead><tr><th>#</th><th>Player</th><th>ELO</th><th>Rank</th><th>Ranked</th><th>WR</th><th>Unranked</th><th>Streak</th></tr></thead><tbody>
+{% for a in archives %}<tr>
+<td style="font-weight:700;color:var(--acc)">{{ a.leaderboard_pos or loop.index }}</td>
+<td><a href="{{ url_for('main.prof',u=a.user.username) }}">{{ a.user.name() }}</a></td>
+<td style="font-weight:700">{{ a.final_elo }}</td>
+<td><span class="b b-r" style="background:{{ rank_color(a.final_rank) }}22;color:{{ rank_color(a.final_rank) }}">{{ a.final_rank }}</span></td>
+<td>{{ a.r_wins }}W/{{ a.r_losses }}L/{{ a.r_draws }}D</td>
+<td>{% set tr=a.r_wins+a.r_losses+a.r_draws %}{{ (a.r_wins/tr*100)|round(1) if tr else 0 }}%</td>
+<td>{{ a.u_wins }}W/{{ a.u_losses }}L/{{ a.u_draws }}D</td>
+<td>{{ a.best_streak }} 🔥</td>
+</tr>{% endfor %}</tbody></table></div>
+{% endblock %}

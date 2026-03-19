@@ -1,0 +1,137 @@
+{% extends "base.html" %}{% block title %}{{ c.name }}{% endblock %}{% block css %}
+<style>
+.clan-hero{border-radius:16px;padding:2rem;margin-bottom:1.5rem;position:relative;overflow:hidden;
+{% if c.bg_image %}background-image:url('{{ url_for("static",filename="uploads/"+c.bg_image) }}');background-size:cover;background-position:center;{% endif %}
+background-color:{{ c.color_secondary or 'var(--bgc)' }};border:1px solid var(--bdr)}
+.clan-hero-overlay{position:absolute;inset:0;background:linear-gradient(135deg,{{ c.color_secondary or 'var(--bgc)' }}dd,{{ c.color_primary or 'var(--acc)' }}44);border-radius:16px}
+.clan-hero-content{position:relative;z-index:1}
+.clan-logo{width:72px;height:72px;border-radius:14px;object-fit:cover;border:2px solid {{ c.color_primary or 'var(--acc)' }}}
+.clan-logo-placeholder{width:72px;height:72px;border-radius:14px;background:{{ c.color_primary or 'var(--acc)' }}33;display:flex;align-items:center;justify-content:center;border:2px solid {{ c.color_primary or 'var(--acc)' }}}
+</style>{% endblock %}{% block body %}
+
+<div class="clan-hero"><div class="clan-hero-overlay"></div><div class="clan-hero-content" style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap">
+{% if c.logo %}<img src="{{ url_for('static',filename='uploads/'+c.logo) }}" class="clan-logo">{% else %}<div class="clan-logo-placeholder"><i class="fas fa-shield-halved" style="color:{{ c.color_primary or 'var(--acc)' }};font-size:1.8rem"></i></div>{% endif %}
+<div><h2 class="pt" style="color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.5)">[{{ c.tag }}] {{ c.name }}</h2><p style="color:rgba(255,255,255,.8);font-size:.9rem">Owner: {{ c.owner.name() }} · Score: {{ c.score }}{% if c.invite_only %} · <span class="b b-w" style="font-size:.7rem"><i class="fas fa-lock"></i> Invite Only</span>{% endif %}</p></div>
+<div style="margin-left:auto;display:flex;gap:.5rem;flex-wrap:wrap">
+{% if current_user.is_authenticated and not is_member and c.recruiting and not c.invite_only %}<form method="POST" action="{{ url_for('clans.clan_join',cid=c.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-p btn-sm"><i class="fas fa-user-plus"></i> Join</button></form>{% endif %}
+{% if is_member and not is_owner %}<form method="POST" action="{{ url_for('clans.clan_leave',cid=c.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-d btn-sm" onclick="return confirm('Leave {{ c.name }}?')"><i class="fas fa-right-from-bracket"></i> Leave</button></form>{% endif %}
+{% if can_invite %}<a href="{{ url_for('clans.clan_invite',cid=c.id) }}" class="btn btn-p btn-sm"><i class="fas fa-envelope"></i> Invite</a>{% endif %}
+{% if is_member %}<a href="{{ url_for('clans.clan_board',cid=c.id) }}" class="btn btn-s btn-sm"><i class="fas fa-comments"></i> Board</a>{% endif %}
+{% if is_member %}<a href="{{ url_for('chat.clan_chat',cid=c.id) }}" class="btn btn-s btn-sm"><i class="fas fa-comment-dots"></i> Chat</a>{% endif %}
+{% if can_edit %}<a href="{{ url_for('clans.clan_edit',cid=c.id) }}" class="btn btn-s btn-sm"><i class="fas fa-pen"></i> Edit</a>{% endif %}
+</div></div></div>
+
+{% if c.description %}<div class="card" style="margin-bottom:1.5rem"><p style="color:var(--t2)">{{ c.description }}</p></div>{% endif %}
+
+<div class="sr"><div class="sc"><div class="sv" style="color:{{ c.color_primary or 'var(--acc)' }}">{{ c.member_count }}</div><div class="sl">Members</div></div><div class="sc"><div class="sv" style="color:{{ c.color_primary or 'var(--acc)' }}">{{ c.avg_elo }}</div><div class="sl">Avg ELO</div></div><div class="sc"><div class="sv" style="color:{{ c.color_primary or 'var(--acc)' }}">{{ c.score }}</div><div class="sl">Score</div></div></div>
+
+{% if pending_invites %}
+<div class="card" style="margin-bottom:1.5rem"><h3 style="font-weight:700;margin-bottom:.75rem"><i class="fas fa-envelope"></i> Pending Invites</h3>
+<table class="dt"><thead><tr><th>Player</th><th>Invited By</th><th>Date</th><th></th></tr></thead><tbody>
+{% for inv in pending_invites %}<tr>
+<td><a href="{{ url_for('main.prof',u=inv.receiver.username) }}">{{ inv.receiver.name() }}</a></td>
+<td>{{ inv.sender.name() }}</td>
+<td style="color:var(--tm);font-size:.82rem">{{ inv.created_at.strftime('%b %d, %H:%M') }}</td>
+<td>{% if can_manage %}<form method="POST" action="{{ url_for('clans.clan_invite_cancel',cid=c.id,iid=inv.id) }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-d btn-sm" onclick="return confirm('Cancel invite?')"><i class="fas fa-times"></i></button></form>{% endif %}<span class="b b-w">Pending</span></td>
+</tr>{% endfor %}</tbody></table></div>
+{% endif %}
+
+<div class="card"><table class="dt"><thead><tr><th>Player</th><th>ELO</th><th>Role</th>{% if can_manage %}<th>Actions</th>{% endif %}</tr></thead><tbody>
+{% for mem in mems %}
+{% set role = mem.get_clan_role(c.id) %}
+<tr>
+<td><a href="{{ url_for('main.prof',u=mem.username) }}" style="display:flex;align-items:center;gap:.5rem">{% if mem.avatar %}<img src="{{ url_for('static',filename='uploads/'+mem.avatar) }}" style="width:24px;height:24px;border-radius:50%;object-fit:cover">{% else %}<img src="{{ url_for('static',filename='placeholder_avatar.svg') }}" style="width:24px;height:24px;border-radius:50%;object-fit:cover">{% endif %}{% if mem.country %}{{ country_flags.get(mem.country,'') }} {% endif %}{{ mem.name() }}</a></td>
+<td>{{ mem.elo }}</td>
+<td>{% if mem.id==c.owner_id %}<span class="b b-w"><i class="fas fa-crown"></i> Owner</span>{% elif role=='officer' %}<span class="b b-a"><i class="fas fa-star"></i> Officer</span>{% else %}<span class="b b-m">Member</span>{% endif %}</td>
+{% if can_manage %}
+<td style="display:flex;gap:.25rem;flex-wrap:wrap">
+{% if mem.id != c.owner_id %}
+{% if role != 'officer' %}<form method="POST" action="{{ url_for('clans.clan_promote',cid=c.id,uid=mem.id) }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-s" title="Promote to Officer"><i class="fas fa-arrow-up"></i></button></form>{% endif %}
+{% if role == 'officer' %}<form method="POST" action="{{ url_for('clans.clan_demote',cid=c.id,uid=mem.id) }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-s" title="Demote to Member"><i class="fas fa-arrow-down"></i></button></form>{% endif %}
+<form method="POST" action="{{ url_for('clans.clan_kick',cid=c.id,uid=mem.id) }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-d" title="Kick" onclick="return confirm('Kick {{ mem.name() }}?')"><i class="fas fa-user-minus"></i></button></form>
+{% endif %}
+</td>
+{% endif %}
+</tr>{% endfor %}</tbody></table></div>
+
+<div class="card" style="margin-top:1.5rem"><h3 style="font-weight:700;margin-bottom:.75rem"><i class="fas fa-crossed-swords"></i> Clan Wars</h3>
+{% if is_owner or is_officer %}
+<form method="POST" action="{{ url_for('clans.clan_war_new',cid=c.id) }}" style="display:flex;gap:.5rem;align-items:end;flex-wrap:wrap;margin-bottom:1rem;padding:.75rem;background:var(--bg2);border-radius:10px">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div style="flex:1;min-width:160px"><label style="font-size:.8rem;color:var(--t2);display:block;margin-bottom:.25rem">Target Clan</label><select name="target_clan_id" class="fi" required>{% for oc in other_clans %}<option value="{{ oc.id }}">[{{ oc.tag }}] {{ oc.name }}</option>{% endfor %}</select></div>
+<div><label style="font-size:.8rem;color:var(--t2);display:block;margin-bottom:.25rem">Matches</label><select name="match_count" class="fi"><option value="3">Bo3</option><option value="5" selected>Bo5</option><option value="7">Bo7</option></select></div>
+<button type="submit" class="btn btn-p btn-sm"><i class="fas fa-fire"></i> Declare War</button>
+</form>
+{% endif %}
+{% set pending_wars = clan_wars|selectattr('status','equalto','pending')|list %}
+{% set active_wars = clan_wars|selectattr('status','equalto','active')|list %}
+{% set completed_wars = clan_wars|selectattr('status','equalto','completed')|list %}
+{% if pending_wars %}
+<h4 style="font-size:.9rem;color:var(--warn);margin-bottom:.5rem"><i class="fas fa-hourglass-half"></i> Pending Challenges</h4>
+<table class="dt" style="margin-bottom:1rem"><thead><tr><th>Challenger</th><th>Defender</th><th>Matches</th><th>Actions</th></tr></thead><tbody>
+{% for w in pending_wars %}<tr>
+<td><a href="{{ url_for('clans.clan_view',cid=w.clan1.id) }}">[{{ w.clan1.tag }}] {{ w.clan1.name }}</a></td>
+<td><a href="{{ url_for('clans.clan_view',cid=w.clan2.id) }}">[{{ w.clan2.tag }}] {{ w.clan2.name }}</a></td>
+<td>{{ w.match_count }}</td>
+<td>{% if w.clan2_id == c.id and (is_owner or is_officer) %}<form method="POST" action="{{ url_for('clans.clan_war_accept',cid=c.id,wid=w.id) }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm" style="background:var(--ok);color:#fff"><i class="fas fa-check"></i> Accept</button></form> <form method="POST" action="{{ url_for('clans.clan_war_decline',cid=c.id,wid=w.id) }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-d btn-sm"><i class="fas fa-times"></i> Decline</button></form>{% elif w.clan1_id == c.id %}<span class="b b-w">Awaiting Response</span>{% endif %}</td>
+</tr>{% endfor %}</tbody></table>
+{% endif %}
+{% if active_wars %}
+<h4 style="font-size:.9rem;color:var(--acc);margin-bottom:.5rem"><i class="fas fa-bolt"></i> Active Wars</h4>
+<table class="dt" style="margin-bottom:1rem"><thead><tr><th>Opponent</th><th>Score</th><th>Matches</th><th></th></tr></thead><tbody>
+{% for w in active_wars %}{% set opp = w.clan2 if w.clan1_id == c.id else w.clan1 %}{% set our_wins = w.clan1_wins if w.clan1_id == c.id else w.clan2_wins %}{% set their_wins = w.clan2_wins if w.clan1_id == c.id else w.clan1_wins %}<tr>
+<td><a href="{{ url_for('clans.clan_view',cid=opp.id) }}">[{{ opp.tag }}] {{ opp.name }}</a></td>
+<td style="font-weight:600"><span style="color:var(--ok)">{{ our_wins }}</span> – <span style="color:var(--err)">{{ their_wins }}</span></td>
+<td>{{ w.match_count }}</td>
+<td><a href="{{ url_for('clans.clan_war_detail',cid=c.id,wid=w.id) }}" class="btn btn-s btn-sm">View</a></td>
+</tr>{% endfor %}</tbody></table>
+{% endif %}
+{% if completed_wars %}
+<h4 style="font-size:.9rem;color:var(--t2);margin-bottom:.5rem"><i class="fas fa-flag-checkered"></i> War History</h4>
+<table class="dt"><thead><tr><th>Opponent</th><th>Result</th><th>Score</th><th>Date</th><th></th></tr></thead><tbody>
+{% for w in completed_wars %}{% set opp = w.clan2 if w.clan1_id == c.id else w.clan1 %}{% set our_wins = w.clan1_wins if w.clan1_id == c.id else w.clan2_wins %}{% set their_wins = w.clan2_wins if w.clan1_id == c.id else w.clan1_wins %}{% set won = (w.winner_clan_id == c.id) %}<tr>
+<td><a href="{{ url_for('clans.clan_view',cid=opp.id) }}">[{{ opp.tag }}] {{ opp.name }}</a></td>
+<td>{% if won %}<span class="b b-s">Won</span>{% else %}<span class="b b-d">Lost</span>{% endif %}</td>
+<td style="font-weight:600">{{ our_wins }} – {{ their_wins }}</td>
+<td style="color:var(--tm);font-size:.82rem">{{ w.completed_at.strftime('%b %d, %Y') if w.completed_at else '' }}</td>
+<td><a href="{{ url_for('clans.clan_war_detail',cid=c.id,wid=w.id) }}" class="btn btn-s btn-sm">View</a></td>
+</tr>{% endfor %}</tbody></table>
+{% endif %}
+{% if not clan_wars %}<div class="empty" style="padding:1rem"><i class="fas fa-peace"></i><p style="margin:0;color:var(--tm)">No wars yet.</p></div>{% endif %}
+</div>
+
+{% if clan_rivalries %}
+<div class="card" style="margin-top:1.5rem"><h3 style="font-weight:700;margin-bottom:.75rem"><i class="fas fa-handshake-angle"></i> Clan Rivalries</h3>
+<table class="dt"><thead><tr><th>Opponent</th><th>Wars Won</th><th>Wars Lost</th><th>Active/Pending</th><th>Record</th></tr></thead><tbody>
+{% for r in clan_rivalries %}<tr>
+<td><a href="{{ url_for('clans.clan_view',cid=r.clan.id) }}">[{{ r.clan.tag }}] {{ r.clan.name }}</a></td>
+<td style="color:var(--ok);font-weight:600">{{ r.won }}</td>
+<td style="color:var(--err);font-weight:600">{{ r.lost }}</td>
+<td style="color:var(--warn)">{{ r.active }}</td>
+<td>{% if r.won > r.lost %}<span class="b b-s">Dominant</span>{% elif r.lost > r.won %}<span class="b b-d">Behind</span>{% elif r.won == r.lost and r.won > 0 %}<span class="b b-w">Even</span>{% else %}<span class="b b-m">New</span>{% endif %}</td>
+</tr>{% endfor %}</tbody></table></div>
+{% endif %}
+
+{% if clan_achievements %}
+<div class="card" style="margin-top:1.5rem"><h3 style="font-weight:700;margin-bottom:.75rem"><i class="fas fa-trophy"></i> Clan Achievements</h3>
+<div style="display:flex;flex-wrap:wrap;gap:.75rem">
+{% for ca in clan_achievements %}{% set info = clan_achievement_types.get(ca.achievement_type, {}) %}
+<div style="background:var(--bg2);border:1px solid var(--bdr);border-radius:12px;padding:.75rem 1rem;display:flex;align-items:center;gap:.75rem;min-width:220px;flex:1;max-width:320px">
+{% if info.get('image') %}<img src="{{ url_for('static',filename='uploads/' + info.image) }}" alt="{{ info.get('name','') }}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0">{% else %}<div style="width:40px;height:40px;border-radius:50%;background:var(--acc)22;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="{{ info.get('icon','fas fa-award') }}" style="color:var(--acc);font-size:1.1rem"></i></div>{% endif %}
+<div><div style="font-weight:600;font-size:.9rem;color:var(--t1)">{{ info.get('name', ca.achievement_type) }}</div><div style="font-size:.78rem;color:var(--t2)">{{ info.get('desc', '') }}</div><div style="font-size:.72rem;color:var(--tm);margin-top:.15rem">{{ ca.awarded_at.strftime('%b %d, %Y') }}</div></div>
+</div>
+{% endfor %}
+</div></div>
+{% endif %}
+
+{% if is_member and current_user.is_authenticated %}
+<div class="card" style="margin-top:1.5rem"><h3 style="font-weight:700;margin-bottom:.75rem"><i class="fas fa-coins" style="color:var(--warn)"></i> Clan Treasury: {{ c.treasury }} 🪙</h3>
+<form method="POST" action="{{ url_for('clans.clan_donate',cid=c.id) }}" style="display:flex;gap:.5rem;align-items:end;flex-wrap:wrap">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div style="flex:1;min-width:120px"><label style="font-size:.8rem;color:var(--t2);display:block;margin-bottom:.25rem">Amount</label><input type="number" name="amount" class="fi" min="1" placeholder="PongCoins" required></div>
+<button type="submit" class="btn btn-p btn-sm"><i class="fas fa-hand-holding-heart"></i> Donate</button>
+</form>
+<p style="font-size:.78rem;color:var(--tm);margin-top:.5rem">Your balance: {{ current_user.points }} 🪙</p>
+</div>
+{% endif %}
+{% endblock %}

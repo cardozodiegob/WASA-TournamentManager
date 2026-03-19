@@ -1,0 +1,47 @@
+{% extends "base.html" %}{% block title %}Hall of Fame{% endblock %}{% block css %}
+<style>
+.hof-podium{display:flex;justify-content:center;gap:1.5rem;margin-bottom:2.5rem;flex-wrap:wrap;align-items:flex-end}
+.hof-card{text-align:center;padding:1.5rem;min-width:200px;border-radius:16px;background:var(--bgc);border:1px solid var(--bdr);transition:all .25s}
+.hof-card:hover{transform:translateY(-4px);box-shadow:0 8px 32px rgba(0,0,0,.15)}
+.hof-1{border:2px solid #ffd700;box-shadow:0 4px 24px rgba(255,215,0,.15);order:2}
+.hof-2{border:2px solid #c0c0c0;order:1}
+.hof-3{border:2px solid #cd7f32;order:3}
+.hof-crown{font-size:2.5rem;margin-bottom:.5rem}
+.hof-av{width:72px;height:72px;border-radius:50%;object-fit:cover;margin:0 auto .5rem;display:block}
+.hof-av-1{border:3px solid #ffd700}
+.hof-av-2{border:3px solid #c0c0c0}
+.hof-av-3{border:3px solid #cd7f32}
+.hof-count{font-size:2rem;font-weight:800;color:var(--acc);margin:.25rem 0}
+@media(max-width:768px){.hof-podium{align-items:stretch}.hof-1,.hof-2,.hof-3{order:unset}}
+</style>{% endblock %}{% block body %}
+<div class="ph"><div><h2 class="pt"><i class="fas fa-crown" style="color:#ffd700"></i> Hall of Fame</h2><p class="ps">Tournament Champions</p></div></div>
+
+{% if top_winners %}
+<div class="hof-podium">
+{% for tw in top_winners[:3] %}
+<div class="hof-card hof-{{ loop.index }}">
+<div class="hof-crown">{% if loop.index==1 %}👑{% elif loop.index==2 %}🥈{% elif loop.index==3 %}🥉{% endif %}</div>
+{% if tw.user.avatar %}<img src="{{ url_for('static',filename='uploads/'+tw.user.avatar) }}" class="hof-av hof-av-{{ loop.index }}">{% else %}<img src="{{ url_for('static',filename='placeholder_avatar.svg') }}" class="hof-av hof-av-{{ loop.index }}">{% endif %}
+<div style="font-weight:800;font-size:1.2rem"><a href="{{ url_for('main.prof',u=tw.user.username) }}">{{ tw.user.name() }}</a></div>
+<div><span class="b b-r" style="background:{{ tw.user.rank_color }}22;color:{{ tw.user.rank_color }}">{{ tw.user.rank_title }}</span></div>
+<div class="hof-count">{{ tw.count }}</div>
+<div style="font-size:.82rem;color:var(--tm)">Tournament{{ 's' if tw.count != 1 else '' }} Won</div>
+<div style="margin-top:.75rem;display:flex;flex-direction:column;gap:.25rem">{% for t in tw.tourneys %}<div style="font-size:.75rem;color:var(--t2)"><a href="{{ url_for('tournaments.t_view',tid=t.id) }}">🏆 {{ t.name }}</a></div>{% endfor %}</div>
+</div>
+{% endfor %}
+</div>
+{% endif %}
+
+{% if champions %}
+<h3 class="pt" style="font-size:1.3rem;margin-bottom:1rem">All Champions</h3>
+<div class="card"><table class="dt"><thead><tr><th>Tournament</th><th>Champion</th><th>Final Score</th><th>Format</th><th>Players</th><th>Date</th></tr></thead><tbody>
+{% for c in champions %}<tr>
+<td><a href="{{ url_for('tournaments.t_view',tid=c.tourney.id) }}" style="display:flex;align-items:center;gap:.5rem">{% if c.tourney.logo %}<img src="{{ url_for('static',filename='uploads/'+c.tourney.logo) }}" style="width:24px;height:24px;border-radius:6px;object-fit:cover">{% endif %}{{ c.tourney.name }}</a></td>
+<td><a href="{{ url_for('main.prof',u=c.winner.username) }}" style="display:flex;align-items:center;gap:.5rem;font-weight:700">{% if c.winner.avatar %}<img src="{{ url_for('static',filename='uploads/'+c.winner.avatar) }}" style="width:24px;height:24px;border-radius:50%;object-fit:cover">{% else %}<img src="{{ url_for('static',filename='placeholder_avatar.svg') }}" style="width:24px;height:24px;border-radius:50%;object-fit:cover">{% endif %}🏆 {{ c.winner.name() }}</a></td>
+<td>{% if c.match %}{{ c.match.p1_score }}–{{ c.match.p2_score }}{% else %}<span class="b b-m">RR</span>{% endif %}</td>
+<td><span class="b b-m">{{ c.tourney.fmt|replace('_',' ')|title }}</span></td>
+<td>{{ c.tourney.player_count }}</td>
+<td style="color:var(--tm);font-size:.82rem">{{ c.tourney.created_at.strftime('%b %d, %Y') }}</td>
+</tr>{% endfor %}</tbody></table></div>
+{% else %}<div class="empty"><i class="fas fa-crown"></i><p>No tournaments completed yet.</p></div>{% endif %}
+{% endblock %}

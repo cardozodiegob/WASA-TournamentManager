@@ -1,0 +1,16 @@
+{% extends "base.html" %}{% block title %}Manage Clans{% endblock %}{% block body %}
+<div class="ph"><div><h2 class="pt">Manage Clans</h2><p class="ps">{{ clans|length }} clans</p></div></div>
+<div class="card"><table class="dt"><thead><tr><th>ID</th><th>Clan</th><th>Owner</th><th>Members</th><th>Score</th><th>Status</th><th></th></tr></thead><tbody>
+{% for c in clans %}<tr>
+<td>{{ c.id }}</td>
+<td><a href="{{ url_for('clans.clan_view',cid=c.id) }}">[{{ c.tag }}] {{ c.name }}</a></td>
+<td><a href="{{ url_for('main.prof',u=c.owner.username) }}">{{ c.owner.name() }}</a></td>
+<td>{{ c.member_count }}/{{ c.max_members }}</td>
+<td style="font-weight:600">{{ c.score }}</td>
+<td>{% if c.active %}<span class="b b-s">Active</span>{% else %}<span class="b b-d">Inactive</span>{% endif %}{% if c.invite_only %} <span class="b b-w"><i class="fas fa-lock"></i></span>{% endif %}</td>
+<td style="display:flex;gap:.25rem">
+<a href="{{ url_for('admin.adm_clan_edit',cid=c.id) }}" class="btn btn-s btn-sm"><i class="fas fa-pen"></i></a>
+<form method="POST" action="{{ url_for('admin.adm_clan_del',cid=c.id) }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-d btn-sm" onclick="return confirm('Delete {{ c.name }}? All members will be removed.')"><i class="fas fa-trash"></i></button></form>
+</td></tr>{% endfor %}</tbody></table>
+{% if not clans %}<div class="empty"><p>No clans.</p></div>{% endif %}
+</div>{% endblock %}

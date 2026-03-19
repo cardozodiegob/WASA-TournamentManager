@@ -1,0 +1,29 @@
+{% extends "base.html" %}{% block title %}Clan Invites{% endblock %}{% block body %}
+<div class="ph"><div><h2 class="pt"><i class="fas fa-envelope"></i> Clan Invites</h2><p class="ps">{{ pending|length }} pending</p></div></div>
+
+{% if pending %}<div style="display:flex;flex-direction:column;gap:.75rem;margin-bottom:1.5rem">{% for inv in pending %}
+<div class="card" style="border-left:3px solid var(--acc);padding:1rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+<div style="flex:1">
+<div style="font-weight:700"><a href="{{ url_for('clans.clan_view',cid=inv.clan.id) }}">[{{ inv.clan.tag }}] {{ inv.clan.name }}</a></div>
+<div style="color:var(--t2);font-size:.88rem">Invited by {{ inv.sender.name() }}{% if inv.message %} · "{{ inv.message }}"{% endif %}</div>
+<div style="color:var(--tm);font-size:.75rem;margin-top:.25rem">{{ inv.created_at.strftime('%b %d, %Y %H:%M') }} · {{ inv.clan.member_count }}/{{ inv.clan.max_members }} members · Avg ELO: {{ inv.clan.avg_elo }}</div>
+</div>
+<div style="display:flex;gap:.35rem">
+<form method="POST" action="{{ url_for('clans.clan_invite_respond',iid=inv.id) }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button name="act" value="accept" class="btn btn-ok btn-sm"><i class="fas fa-check"></i> Join</button></form>
+<form method="POST" action="{{ url_for('clans.clan_invite_respond',iid=inv.id) }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button name="act" value="decline" class="btn btn-d btn-sm"><i class="fas fa-times"></i> Decline</button></form>
+</div>
+</div>
+{% endfor %}</div>{% endif %}
+
+{% if past %}<h3 class="pt" style="font-size:1.2rem;margin-bottom:1rem">Past Invites</h3>
+<div class="card"><table class="dt"><thead><tr><th>Clan</th><th>From</th><th>Status</th><th>Date</th></tr></thead><tbody>
+{% for inv in past %}<tr>
+<td><a href="{{ url_for('clans.clan_view',cid=inv.clan.id) }}">[{{ inv.clan.tag }}] {{ inv.clan.name }}</a></td>
+<td>{{ inv.sender.name() }}</td>
+<td><span class="b {% if inv.state=='accepted' %}b-s{% elif inv.state=='declined' %}b-d{% else %}b-m{% endif %}">{{ inv.state|title }}</span></td>
+<td style="color:var(--tm);font-size:.82rem">{{ inv.created_at.strftime('%b %d') }}</td>
+</tr>{% endfor %}</tbody></table></div>
+{% endif %}
+
+{% if not pending and not past %}<div class="empty"><i class="fas fa-envelope"></i><p>No clan invites.</p></div>{% endif %}
+{% endblock %}

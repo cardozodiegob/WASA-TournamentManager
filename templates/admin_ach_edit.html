@@ -1,0 +1,35 @@
+{% extends "base.html" %}{% block title %}Edit: {{ a.title }}{% endblock %}{% block body %}<div style="max-width:600px;margin:0 auto">
+<h2 class="pt" style="margin-bottom:1.5rem">Edit Achievement</h2>
+<div class="card" style="padding:2rem;margin-bottom:1.5rem"><form method="POST" enctype="multipart/form-data"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div class="fg"><label class="fl">Title</label><input type="text" name="title" class="fi" value="{{ a.title }}" required minlength="2" maxlength="128"></div>
+<div class="fg"><label class="fl">Description</label><textarea name="description" class="ft" style="min-height:60px">{{ a.description or '' }}</textarea></div>
+<div class="fg"><label class="fl">Replace Image</label><input type="file" name="image" class="fi" accept="image/*">{% if a.image %}<div style="margin-top:.5rem"><img src="{{ url_for('static',filename='uploads/'+a.image) }}" style="width:64px;height:64px;border-radius:8px;object-fit:cover"><span style="font-size:.8rem;color:var(--tm);margin-left:.5rem">Current</span></div>{% endif %}</div>
+<button type="submit" class="btn btn-p btn-bl"><i class="fas fa-save"></i> Save</button>
+</form></div>
+
+<div class="card" style="padding:1.5rem;margin-bottom:1.5rem"><h3 style="font-weight:700;margin-bottom:1rem">Holders ({{ holders|length }})</h3>
+{% if holders %}
+<form method="POST" action="{{ url_for('admin.adm_ach_revoke_bulk',aid=a.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<table class="dt"><thead><tr><th><input type="checkbox" onchange="this.closest('table').querySelectorAll('input[name=uids]').forEach(c=>c.checked=this.checked)"></th><th>Player</th><th>ELO</th><th></th></tr></thead><tbody>
+{% for u in holders %}<tr>
+<td><input type="checkbox" name="uids" value="{{ u.id }}"></td>
+<td><a href="{{ url_for('main.prof',u=u.username) }}" style="display:flex;align-items:center;gap:.5rem">{% if u.avatar %}<img src="{{ url_for('static',filename='uploads/'+u.avatar) }}" style="width:24px;height:24px;border-radius:50%;object-fit:cover">{% else %}<img src="{{ url_for('static',filename='placeholder_avatar.svg') }}" style="width:24px;height:24px;border-radius:50%;object-fit:cover">{% endif %}{{ u.name() }}</a></td>
+<td>{{ u.elo }}</td>
+<td><form method="POST" action="{{ url_for('admin.adm_ach_revoke',aid=a.id,uid=u.id) }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-d btn-sm" onclick="return confirm('Remove from {{ u.name() }}?')" title="Revoke"><i class="fas fa-user-minus"></i></button></form></td>
+</tr>{% endfor %}</tbody></table>
+<button type="submit" class="btn btn-d btn-sm" style="margin-top:.75rem" onclick="var c=this.closest('form').querySelectorAll('input[name=uids]:checked').length;if(!c){alert('Select at least one.');return false}return confirm('Remove {{ a.title }} from '+c+' player(s)?')"><i class="fas fa-user-minus"></i> Remove Selected</button>
+</form>
+{% else %}<p style="color:var(--tm);font-size:.88rem;text-align:center;padding:1rem">No users have this achievement.</p>{% endif %}
+</div>
+
+<div class="card" style="padding:1.5rem"><h3 style="font-weight:700;margin-bottom:1rem">Quick Award</h3>
+<form method="POST" action="{{ url_for('admin.adm_award_bulk') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="aid" value="{{ a.id }}"><input type="hidden" name="redirect_back" value="{{ a.id }}">
+<div class="fg"><label class="fl">Add to players</label>
+<div style="display:flex;flex-wrap:wrap;gap:.35rem;max-height:180px;overflow-y:auto;padding:.5rem;background:var(--bg3);border:1px solid var(--bdr);border-radius:10px">
+{% for u in non_holders %}<label style="display:flex;align-items:center;gap:.3rem;padding:.25rem .5rem;border-radius:6px;font-size:.82rem;cursor:pointer"><input type="checkbox" name="uids" value="{{ u.id }}"><span>{{ u.name() }}</span></label>{% endfor %}
+{% if not non_holders %}<span style="color:var(--tm);font-size:.85rem;padding:.5rem">Everyone already has this achievement!</span>{% endif %}
+</div>
+</div>
+{% if non_holders %}<button type="submit" class="btn btn-p btn-sm" onclick="var c=this.closest('form').querySelectorAll('input[name=uids]:checked').length;if(!c){alert('Select at least one.');return false}return confirm('Award to '+c+' player(s)?')"><i class="fas fa-award"></i> Award Selected</button>{% endif %}
+</form></div>
+</div>{% endblock %}
