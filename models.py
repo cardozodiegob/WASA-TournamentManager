@@ -240,7 +240,7 @@ class UserCosmetic(db.Model):
     purchased_at=db.Column(db.DateTime,nullable=False,default=lambda: datetime.now(timezone.utc))
     __table_args__=(db.UniqueConstraint('user_id','item_id',name='uq_user_cosmetic'),)
     user=relationship('User',backref=db.backref('cosmetics',lazy='dynamic'))
-    item=relationship('CosmeticItem',backref='owners')
+    item=relationship('CosmeticItem',backref=db.backref('owners',passive_deletes=True))
 
 class Bet(db.Model):
     __tablename__='bets'
