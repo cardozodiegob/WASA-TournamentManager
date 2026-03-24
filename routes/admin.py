@@ -10,7 +10,7 @@ from extensions import db, app, log
 from models import (User, EloSnap, Match, Tournament, News, Alert, GlobalAlert,
                     Audit, Achievement, Clan, Season, SeasonArchive, ClanAchievement,
                     clan_members, tourney_players, user_achs, AppSetting,
-                    CosmeticItem, PointTransaction, Endorsement, MatchPrediction,
+                    CosmeticItem, UserCosmetic, PointTransaction, Endorsement, MatchPrediction,
                     Bet, ClanWar, ClanWarMatch, CustomClanAchievementType)
 from forms import (AdminUserForm, AchForm, MatchForm, AdminAlertForm)
 from helpers import (
@@ -22,7 +22,8 @@ from helpers import (
     _create_backup, _list_backups, _restore_backup, _delete_backup,
     SEED_COSMETIC_ITEMS, generate_cosmetic_item,
     COSMETIC_CATEGORIES, RARITY_TIERS, RARITY_COLORS, EFFECT_TYPES, _GENERATOR_TEMPLATES,
-    CLAN_ACHIEVEMENT_TYPES, _get_clan_achievement_registry, EFFECT_MODES
+    CLAN_ACHIEVEMENT_TYPES, _get_clan_achievement_registry, EFFECT_MODES,
+    RARITY_PRICE_RANGES
 )
 
 admin_bp = Blueprint('admin', __name__)
@@ -894,7 +895,8 @@ def adm_cosmetics():
                            categories=COSMETIC_CATEGORIES, rarity_tiers=RARITY_TIERS,
                            rarity_colors=RARITY_COLORS, effect_types=EFFECT_TYPES,
                            effect_modes=EFFECT_MODES,
-                           generator_templates=generator_templates)
+                           generator_templates=generator_templates,
+                           rarity_price_ranges=RARITY_PRICE_RANGES)
 
 @admin_bp.route('/admin/cosmetics/create', methods=['POST'])
 @_admin
@@ -993,7 +995,12 @@ def adm_cosmetic_edit(cid):
         item.effect_mode = request.form.get('effect_mode', item.effect_mode or 'css').strip()
         item.price = request.form.get('price', item.price, type=int)
         item.css_data = request.form.get('css_data', '').strip() or None
-        item.active = 'active' in request.form
+        if 'legacy' in request.form:
+            item.active = False
+            item.legacy = True
+        else:
+            item.legacy = False
+            item.active = 'active' in request.form
         img = request.files.get('image')
         if img and img.filename:
             p = _simg(img, 'misc')
@@ -1009,16 +1016,20 @@ def adm_cosmetic_edit(cid):
         _ok()
         flash(f'Cosmetic item "{item.name}" updated.', 'success')
         return redirect(url_for('admin.adm_cosmetics'))
+    owner_count = UserCosmetic.query.filter_by(item_id=cid).count()
     return render_template('admin_cosmetic_edit.html', item=item,
                            categories=COSMETIC_CATEGORIES, rarity_tiers=RARITY_TIERS,
                            rarity_colors=RARITY_COLORS, effect_types=EFFECT_TYPES,
-                           effect_modes=EFFECT_MODES)
+                           effect_modes=EFFECT_MODES, rarity_price_ranges=RARITY_PRICE_RANGES,
+                           owner_count=owner_count)
 
 @admin_bp.route('/admin/cosmetics/<int:cid>/delete', methods=['POST'])
 @_admin
 def adm_cosmetic_del(cid):
     item = CosmeticItem.query.get_or_404(cid)
     name = item.name
+    owner_count = UserCosmetic.query.filter_by(item_id=cid).count()
+    UserCosmetic.query.filter_by(item_id=cid).delete()
     if item.image:
         old = os.path.join(app.config['UPLOAD_FOLDER'], item.image)
         if os.path.isfile(old):
@@ -1027,8 +1038,11 @@ def adm_cosmetic_del(cid):
             except OSError:
                 pass
     db.session.delete(item)
-    _ok()
-    flash(f'Cosmetic item "{name}" deleted.', 'success')
+    if not _ok():
+        db.session.rollback()
+        flash('Failed to delete cosmetic item.', 'danger')
+        return redirect(url_for('admin.adm_cosmetics'))
+    flash(f'Cosmetic item "{name}" deleted. Removed from {owner_count} inventories.', 'success')
     return redirect(url_for('admin.adm_cosmetics'))
 
 

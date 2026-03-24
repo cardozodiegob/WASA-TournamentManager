@@ -228,6 +228,7 @@ class CosmeticItem(db.Model):
     css_data=db.Column(db.String(512))
     image=db.Column(db.String(256))
     active=db.Column(db.Boolean,nullable=False,default=True)
+    legacy=db.Column(db.Boolean,nullable=False,default=False)
     created_at=db.Column(db.DateTime,nullable=False,default=lambda: datetime.now(timezone.utc))
 
 class UserCosmetic(db.Model):

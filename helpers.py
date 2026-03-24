@@ -36,6 +36,14 @@ EFFECT_TYPES = ['none', 'glow', 'pulse', 'sparkle', 'rainbow', 'shadow', 'partic
 
 EFFECT_MODES = ['css', 'svg_filter', 'canvas']
 
+RARITY_PRICE_RANGES = {
+    'common': (10, 30),
+    'uncommon': (30, 80),
+    'rare': (80, 200),
+    'epic': (200, 500),
+    'legendary': (500, 1000),
+}
+
 CANVAS_EFFECT_KEYS = [
     'sunburst_rays', 'electric_border', 'fire_aura', 'smoke_trail',
     'matrix_rain', 'lightning', 'plasma_field', 'snowfall_sparkle'
@@ -148,10 +156,19 @@ SEED_COSMETIC_ITEMS = [
         'name': 'Pulsing Glow Border',
         'category': 'profile_border',
         'description': 'A border that pulses with an ethereal glow',
-        'price': 350,
+        'price': 150,
         'rarity': 'rare',
         'effect_type': 'pulse',
         'css_data': '''border: 3px solid #00ffff; box-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff, 0 0 30px #00ffff; animation: pulse-glow 2s ease-in-out infinite; @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff; } 50% { box-shadow: 0 0 20px #00ffff, 0 0 40px #00ffff, 0 0 60px #00ffff; } }'''
+    },
+    {
+        'name': 'Simple Blue Border',
+        'category': 'profile_border',
+        'description': 'A clean blue border for your profile',
+        'price': 10,
+        'rarity': 'common',
+        'effect_type': 'none',
+        'css_data': 'border: 2px solid #2196f3;'
     },
     {
         'name': 'Rainbow Cycling Border',
@@ -167,10 +184,19 @@ SEED_COSMETIC_ITEMS = [
         'name': 'Gradient Shift Background',
         'category': 'profile_background',
         'description': 'A background with smoothly shifting gradient colors',
-        'price': 400,
+        'price': 120,
         'rarity': 'rare',
         'effect_type': 'rainbow',
         'css_data': '''background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab); background-size: 400% 400%; animation: gradient-shift 15s ease infinite; @keyframes gradient-shift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }'''
+    },
+    {
+        'name': 'Simple Dark Background',
+        'category': 'profile_background',
+        'description': 'A clean dark background for your profile',
+        'price': 10,
+        'rarity': 'common',
+        'effect_type': 'none',
+        'css_data': 'background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);'
     },
     {
         'name': 'Starfield Background',
@@ -185,7 +211,7 @@ SEED_COSMETIC_ITEMS = [
         'name': 'Wave Background',
         'category': 'profile_background',
         'description': 'An animated wave pattern background',
-        'price': 380,
+        'price': 150,
         'rarity': 'rare',
         'effect_type': 'pulse',
         'css_data': '''background: linear-gradient(180deg, #0077b6 0%, #00b4d8 50%, #90e0ef 100%); animation: wave-motion 4s ease-in-out infinite; @keyframes wave-motion { 0%, 100% { background-position: 0% 0%; } 50% { background-position: 0% 10%; } }'''
@@ -195,7 +221,7 @@ SEED_COSMETIC_ITEMS = [
         'name': 'Champion Badge',
         'category': 'badge',
         'description': 'A golden trophy badge for champions',
-        'price': 200,
+        'price': 50,
         'rarity': 'uncommon',
         'effect_type': 'none',
         'css_data': '🏆'
@@ -204,7 +230,7 @@ SEED_COSMETIC_ITEMS = [
         'name': 'Fire Badge',
         'category': 'badge',
         'description': 'Show everyone you are on fire',
-        'price': 150,
+        'price': 15,
         'rarity': 'common',
         'effect_type': 'none',
         'css_data': '🔥'
@@ -214,7 +240,7 @@ SEED_COSMETIC_ITEMS = [
         'name': 'Golden Name',
         'category': 'name_color',
         'description': 'Display your name in luxurious gold',
-        'price': 300,
+        'price': 100,
         'rarity': 'rare',
         'effect_type': 'none',
         'css_data': 'color: #ffd700;'
@@ -223,8 +249,8 @@ SEED_COSMETIC_ITEMS = [
         'name': 'Neon Pink Name',
         'category': 'name_color',
         'description': 'A vibrant neon pink name color',
-        'price': 250,
-        'rarity': 'uncommon',
+        'price': 15,
+        'rarity': 'common',
         'effect_type': 'none',
         'css_data': 'color: #ff1493;'
     },
@@ -242,8 +268,8 @@ SEED_COSMETIC_ITEMS = [
         'name': 'Pulsing Name',
         'category': 'name_effect',
         'description': 'Your name pulses with energy',
-        'price': 350,
-        'rarity': 'rare',
+        'price': 15,
+        'rarity': 'common',
         'effect_type': 'pulse',
         'css_data': '''animation: name-pulse 1.5s ease-in-out infinite; @keyframes name-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }'''
     },
@@ -252,7 +278,7 @@ SEED_COSMETIC_ITEMS = [
         'name': 'Star Flair',
         'category': 'chat_flair',
         'description': 'A sparkling star next to your name in chat',
-        'price': 100,
+        'price': 10,
         'rarity': 'common',
         'effect_type': 'none',
         'css_data': '⭐'
@@ -261,7 +287,7 @@ SEED_COSMETIC_ITEMS = [
         'name': 'Crown Flair',
         'category': 'chat_flair',
         'description': 'A royal crown flair for chat',
-        'price': 180,
+        'price': 40,
         'rarity': 'uncommon',
         'effect_type': 'none',
         'css_data': '👑'
@@ -276,15 +302,33 @@ SEED_COSMETIC_ITEMS = [
         'effect_type': 'glow',
         'css_data': 'Legend'
     },
+    {
+        'name': 'Rookie Title',
+        'category': 'title',
+        'description': 'Display "Rookie" below your username',
+        'price': 10,
+        'rarity': 'common',
+        'effect_type': 'none',
+        'css_data': 'Rookie'
+    },
     # Avatar Frame (1)
     {
         'name': 'Golden Frame',
         'category': 'avatar_frame',
         'description': 'A luxurious golden frame around your avatar',
-        'price': 350,
+        'price': 100,
         'rarity': 'rare',
         'effect_type': 'none',
         'css_data': 'border: 3px solid #ffd700; box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);'
+    },
+    {
+        'name': 'Simple Frame',
+        'category': 'avatar_frame',
+        'description': 'A clean white frame around your avatar',
+        'price': 10,
+        'rarity': 'common',
+        'effect_type': 'none',
+        'css_data': 'border: 2px solid #ffffff;'
     },
     # Profile Effect (1)
     {
@@ -296,15 +340,33 @@ SEED_COSMETIC_ITEMS = [
         'effect_type': 'shadow',
         'css_data': '''box-shadow: 0 0 30px rgba(0, 0, 0, 0.8), 0 0 60px rgba(75, 0, 130, 0.4); animation: shadow-pulse 3s ease-in-out infinite; @keyframes shadow-pulse { 0%, 100% { box-shadow: 0 0 30px rgba(0, 0, 0, 0.8), 0 0 60px rgba(75, 0, 130, 0.4); } 50% { box-shadow: 0 0 50px rgba(0, 0, 0, 0.9), 0 0 80px rgba(75, 0, 130, 0.6); } }'''
     },
+    {
+        'name': 'Subtle Glow',
+        'category': 'profile_effect',
+        'description': 'A subtle glow around your profile',
+        'price': 15,
+        'rarity': 'common',
+        'effect_type': 'glow',
+        'css_data': 'box-shadow: 0 0 8px rgba(108, 92, 231, 0.3);'
+    },
     # Profile Banner (1)
     {
         'name': 'Sunset Banner',
         'category': 'profile_banner',
         'description': 'A beautiful sunset gradient banner',
-        'price': 280,
+        'price': 50,
         'rarity': 'uncommon',
         'effect_type': 'none',
         'css_data': 'background: linear-gradient(135deg, #ff6b6b 0%, #feca57 50%, #ff9ff3 100%);'
+    },
+    {
+        'name': 'Blue Banner',
+        'category': 'profile_banner',
+        'description': 'A simple blue gradient banner',
+        'price': 15,
+        'rarity': 'common',
+        'effect_type': 'none',
+        'css_data': 'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);'
     },
     # --- Premium Animated Effects (8) ---
     # Particle (2)
@@ -1081,7 +1143,7 @@ def _proc_r(m):
         _activity('match', p1.id, f'{_riv_prefix}beat {p2.name()} {m.p1_score}–{m.p2_score} ({m.elo_d1:+d}/{m.elo_d2:+d})', 'trophy', 'success', url_for('matches.match_view',mid=m.id))
     elif m.winner_id==p2.id:
         _activity('match', p2.id, f'{_riv_prefix}beat {p1.name()} {m.p2_score}–{m.p1_score} ({m.elo_d1:+d}/{m.elo_d2:+d})', 'trophy', 'success', url_for('matches.match_view',mid=m.id))
-    if m.winner_id: _award_points(m.winner_id, 10, f'Ranked win (Match #{m.id})')
+    if m.winner_id: _award_points(m.winner_id, 15, f'Ranked win (Match #{m.id})')
     if m.stake and m.stake > 0 and m.winner_id:
         _award_points(m.winner_id, m.stake * 2, f'Challenge stake won (Match #{m.id})')
     for p in [p1, p2]:
@@ -1141,7 +1203,7 @@ def _proc_u(m):
     elif m.winner_id==p2.id:
         p2.u_wins+=1; p1.u_losses+=1
         _activity('match', p2.id, f'{_riv_prefix}beat {p1.name()} {m.p2_score}–{m.p1_score} [Unranked]', 'trophy', 'success', url_for('matches.match_view',mid=m.id))
-    if m.winner_id: _award_points(m.winner_id, 5, f'Unranked win (Match #{m.id})')
+    if m.winner_id: _award_points(m.winner_id, 8, f'Unranked win (Match #{m.id})')
     if m.stake and m.stake > 0 and m.winner_id:
         _award_points(m.winner_id, m.stake * 2, f'Challenge stake won (Match #{m.id})')
     for pred in m.predictions.all():
