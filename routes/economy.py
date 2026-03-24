@@ -75,12 +75,22 @@ def inventory():
 def inventory_equip(uc_id):
     uc=UserCosmetic.query.get_or_404(uc_id)
     if uc.user_id!=current_user.id: flash('Not yours.','danger'); return redirect(url_for('economy.inventory'))
+    item_name=uc.item.name
+    cat=uc.item.category
     if uc.equipped:
-        uc.equipped=False; _ok(); flash(f'Unequipped {uc.item.name}.','info')
+        uc.equipped=False; _ok(); flash(f'Unequipped {item_name}.','info')
     else:
-        for other in current_user.cosmetics.filter(UserCosmetic.equipped==True).all():
-            if other.item.category==uc.item.category and other.id!=uc.id: other.equipped=False
-        uc.equipped=True; _ok(); flash(f'Equipped {uc.item.name}!','success')
+        # Unequip others in same category using direct update to avoid ORM cascade issues
+        UserCosmetic.query.filter(
+            UserCosmetic.user_id==current_user.id,
+            UserCosmetic.id!=uc.id,
+            UserCosmetic.equipped==True
+        ).filter(
+            UserCosmetic.item_id.in_(
+                db.session.query(CosmeticItem.id).filter(CosmeticItem.category==cat)
+            )
+        ).update({UserCosmetic.equipped: False}, synchronize_session='fetch')
+        uc.equipped=True; _ok(); flash(f'Equipped {item_name}!','success')
     return redirect(url_for('economy.inventory'))
 
 @economy_bp.route('/bets')
