@@ -1,45 +1,72 @@
-{% extends "base.html" %}{% block title %}Cosmetic Items{% endblock %}{% block body %}<h2 class="pt" style="margin-bottom:1.5rem"><i class="fas fa-gem" style="color:var(--acc);margin-right:.4rem"></i> Cosmetic Items</h2>
+{% extends "base.html" %}{% block title %}Cosmetic Items{% endblock %}{% block body %}
+{% raw %}<style>
+.mc{max-width:1600px}
+.cosm-collapse{display:none;padding-top:1rem}
+.cosm-collapse.open{display:block}
+.cosm-table{width:100%;border-collapse:collapse}
+.cosm-table th,.cosm-table td{white-space:nowrap;padding:.5rem .6rem}
+.cosm-table td:nth-child(3){white-space:normal;min-width:120px}
+</style>{% endraw %}
+<h2 class="pt" style="margin-bottom:1.5rem"><i class="fas fa-gem" style="color:var(--acc);margin-right:.4rem"></i> Cosmetic Items</h2>
 
-{# ===== CREATE ITEM FORM ===== #}
+{# ===== COLLAPSIBLE CREATE ITEM FORM ===== #}
 <div class="card" style="padding:1.5rem;margin-bottom:1.5rem">
-<h3 style="font-weight:700;margin-bottom:1rem"><i class="fas fa-plus" style="color:var(--acc);margin-right:.4rem"></i> Create Item</h3>
+<button type="button" class="btn btn-p" onclick="toggleSection('create-section')" style="display:flex;align-items:center;gap:.4rem"><i class="fas fa-plus" id="create-section-icon"></i> Create Item</button>
+<div id="create-section" class="cosm-collapse">
+<div>
 <form method="POST" action="{{ url_for('admin.adm_cosmetic_create') }}" enctype="multipart/form-data"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem">
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem">
 <div class="fg"><label class="fl">Name</label><input type="text" name="name" class="fi" required maxlength="64"></div>
 <div class="fg"><label class="fl">Category</label>
-<select name="category" class="fs" required>
+<select name="category" id="create-category" class="fs" required>
 {% for c in categories %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
 </select></div>
 <div class="fg"><label class="fl">Rarity</label>
-<select name="rarity" class="fs">
+<select name="rarity" id="create-rarity" class="fs">
 {% for r in rarity_tiers %}<option value="{{ r }}" {% if r == 'common' %}selected{% endif %}>{{ r|capitalize }}</option>{% endfor %}
 </select></div>
 <div class="fg"><label class="fl">Effect Type</label>
-<select name="effect_type" class="fs">
+<select name="effect_type" id="create-effect-type" class="fs">
 {% for e in effect_types %}<option value="{{ e }}" {% if e == 'none' %}selected{% endif %}>{{ e|capitalize }}</option>{% endfor %}
 </select></div>
 <div class="fg"><label class="fl">Effect Mode</label>
-<select name="effect_mode" id="create-effect-mode" class="fs" onchange="updateCssLabel()">
+<select name="effect_mode" id="create-effect-mode" class="fs">
 {% for m in effect_modes %}<option value="{{ m }}">{{ m }}</option>{% endfor %}
 </select></div>
-<div class="fg"><label class="fl">Price</label><input type="number" name="price" class="fi" value="0" min="0"></div>
+<div class="fg"><label class="fl">Price</label><input type="number" name="price" class="fi" value="0" min="0"><div id="create-price-hint" style="font-size:.75rem;color:var(--tm);margin-top:.25rem"></div></div>
 </div>
 <div class="fg"><label class="fl">Description</label><textarea name="description" class="ft" style="min-height:60px" maxlength="256"></textarea></div>
-<div class="fg"><label class="fl" id="create-css-label">CSS Data</label><input type="text" name="css_data" class="fi" placeholder="Optional CSS styling" maxlength="512"></div>
-<div class="fg"><label class="fl">Image</label><input type="file" name="image" class="fi" accept="image/*"></div>
+
+{# Friendly inputs + CSS + Preview in two columns #}
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:.5rem">
+<div>
+<div id="create-friendly" style="margin-bottom:.75rem"></div>
+<div class="fg"><label class="fl" id="create-css-label">CSS Data</label><input type="text" name="css_data" id="create-css-input" class="fi" placeholder="Optional CSS styling" maxlength="512"></div>
+<div class="fg"><label class="fl">Image</label><input type="file" name="image" class="fi" accept="image/*"><div id="create-image-help" style="font-size:.75rem;color:var(--tm);margin-top:.25rem"></div></div>
+</div>
+<div>
+<div class="fg"><label class="fl">Live Preview</label>
+<div id="create-preview-wrap" style="min-height:120px;border-radius:8px;background:var(--bg3);padding:1rem;display:flex;align-items:center;justify-content:center">
+<div id="create-preview" style="transition:all .1s"></div>
+</div></div>
+</div>
+</div>
+
 <div class="fg"><label style="display:flex;align-items:center;gap:.5rem;cursor:pointer"><input type="checkbox" name="active" checked><span>Active</span></label></div>
 <button type="submit" class="btn btn-p"><i class="fas fa-plus"></i> Create</button>
-</form></div>
+</form></div></div></div>
 
-{# ===== SEED & GENERATOR ===== #}
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem">
+{# ===== COLLAPSIBLE TOOLS (SEED & GENERATOR) ===== #}
+<div class="card" style="padding:1.5rem;margin-bottom:1.5rem">
+<button type="button" class="btn btn-s" onclick="toggleSection('tools-section')" style="display:flex;align-items:center;gap:.4rem"><i class="fas fa-wrench" id="tools-section-icon"></i> Tools</button>
+<div id="tools-section" class="cosm-collapse">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;padding-top:1rem">
 <div class="card" style="padding:1.5rem">
 <h3 style="font-weight:700;margin-bottom:1rem"><i class="fas fa-seedling" style="color:var(--ok);margin-right:.4rem"></i> Seed Example Items</h3>
 <p style="color:var(--t2);font-size:.88rem;margin-bottom:1rem">Insert predefined example cosmetic items. Duplicates are skipped.</p>
 <form method="POST" action="{{ url_for('admin.adm_cosmetic_seed') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 <button type="submit" class="btn btn-ok" onclick="return confirm('Seed example cosmetic items?')"><i class="fas fa-seedling"></i> Seed Example Items</button>
 </form></div>
-
 <div class="card" style="padding:1.5rem">
 <h3 style="font-weight:700;margin-bottom:1rem"><i class="fas fa-wand-magic-sparkles" style="color:var(--acc);margin-right:.4rem"></i> Item Generator</h3>
 <form method="POST" action="{{ url_for('admin.adm_cosmetic_generate') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -55,7 +82,7 @@
 </div>
 <button type="submit" class="btn btn-p" style="margin-top:1rem"><i class="fas fa-wand-magic-sparkles"></i> Generate</button>
 </form></div>
-</div>
+</div></div></div>
 
 {# ===== ITEMS LIST ===== #}
 <div class="card" style="padding:1.5rem">
@@ -75,22 +102,22 @@
 </div>
 
 {% if items %}
-<div style="overflow-x:auto">
-<table class="dt"><thead><tr><th>ID</th><th>Preview</th><th>Name</th><th>Category</th><th>Rarity</th><th>Effect</th><th>Mode</th><th>Price</th><th>Active</th><th>Created</th><th></th></tr></thead><tbody>
+<div>
+<table class="dt cosm-table"><thead><tr><th>ID</th><th>Preview</th><th>Name</th><th>Category</th><th>Rarity</th><th>Effect</th><th>Mode</th><th>Price</th><th>Status</th><th>Created</th><th></th></tr></thead><tbody>
 {% for item in items %}<tr>
 <td>{{ item.id }}</td>
-<td><div style="width:40px;height:40px;border-radius:6px;background:var(--bg3);{{ item.css_data or '' }}" title="{{ item.css_data or 'No CSS' }}"></div></td>
+<td>{% if item.css_data and item.category in ('badge','chat_flair','title') %}<div style="font-size:1.3rem;text-align:center">{{ item.css_data }}</div>{% elif item.css_data and '@keyframes' in item.css_data %}<style>{{ item.css_data[item.css_data.index('@keyframes'):] }}</style><div style="width:40px;height:40px;border-radius:6px;background:var(--bg3);{{ item.css_data[:item.css_data.index('@keyframes')].strip().rstrip(';') }}"></div>{% elif item.css_data %}<div style="width:40px;height:40px;border-radius:6px;background:var(--bg3);{{ item.css_data }}"></div>{% else %}<div style="width:40px;height:40px;border-radius:6px;background:var(--bg3)" title="No CSS"></div>{% endif %}</td>
 <td style="display:flex;align-items:center;gap:.5rem">{% if item.image %}<img src="{{ url_for('static',filename='uploads/'+item.image) }}" style="width:32px;height:32px;border-radius:6px;object-fit:cover">{% endif %}{{ item.name }}</td>
 <td><span class="b b-m">{{ item.category }}</span></td>
 <td><span class="b" style="background:{{ rarity_colors.get(item.rarity, '#9e9e9e') }}22;color:{{ rarity_colors.get(item.rarity, '#9e9e9e') }}">{{ item.rarity|capitalize }}</span></td>
 <td>{% if item.effect_type and item.effect_type != 'none' %}<span class="b b-a">{{ item.effect_type }}</span>{% else %}<span class="b b-m">none</span>{% endif %}</td>
 <td>{% if item.effect_mode and item.effect_mode != 'css' %}<span class="b b-a">{{ item.effect_mode }}</span>{% else %}<span class="b b-m">css</span>{% endif %}</td>
 <td>{{ item.price }} <i class="fas fa-coins" style="color:var(--acc);font-size:.75rem"></i></td>
-<td>{% if item.active %}<span class="b b-s">Yes</span>{% else %}<span class="b b-d">No</span>{% endif %}</td>
+<td>{% if item.legacy %}<span class="b" style="background:#ff980022;color:#ff9800">Legacy</span>{% elif item.active %}<span class="b b-s">Active</span>{% else %}<span class="b b-d">Inactive</span>{% endif %}</td>
 <td style="font-size:.82rem;color:var(--tm)">{{ item.created_at.strftime('%Y-%m-%d') }}</td>
 <td style="display:flex;gap:.3rem">
 <a href="{{ url_for('admin.adm_cosmetic_edit',cid=item.id) }}" class="btn btn-s btn-sm" title="Edit"><i class="fas fa-pen"></i></a>
-<form method="POST" action="{{ url_for('admin.adm_cosmetic_del',cid=item.id) }}" style="margin:0"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-d btn-sm" onclick="return confirm('Delete {{ item.name }}?')" title="Delete"><i class="fas fa-trash"></i></button></form>
+<form method="POST" action="{{ url_for('admin.adm_cosmetic_del',cid=item.id) }}" style="margin:0"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-d btn-sm" onclick="return confirm('Delete {{ item.name }}? This will remove it from all user inventories.')" title="Delete"><i class="fas fa-trash"></i></button></form>
 </td>
 </tr>{% endfor %}</tbody></table>
 </div>
@@ -104,21 +131,18 @@
 {% else %}<p style="color:var(--tm);text-align:center;padding:2rem">No cosmetic items found.</p>{% endif %}
 </div>
 
+<script src="{{ url_for('static', filename='cosmetic_admin.js') }}"></script>
+{% raw %}
 <script>
-var genTemplates = {{ generator_templates|tojson }};
+var genTemplates = {% endraw %}{{ generator_templates|tojson }}{% raw %};
+var rarityPriceRanges = {% endraw %}{{ rarity_price_ranges|tojson }}{% raw %};
 function updateTemplates(){
-  var cat = document.getElementById('gen-category').value;
-  var sel = document.getElementById('gen-template');
-  sel.innerHTML = '';
-  var tpls = genTemplates[cat] || [];
-  tpls.forEach(function(t){ var o = document.createElement('option'); o.value = t; o.textContent = t; sel.appendChild(o); });
+  var cat=document.getElementById('gen-category').value;
+  var sel=document.getElementById('gen-template');sel.innerHTML='';
+  (genTemplates[cat]||[]).forEach(function(t){var o=document.createElement('option');o.value=t;o.textContent=t;sel.appendChild(o);});
 }
 updateTemplates();
-var cssLabels = {'css':'CSS Data','svg_filter':'SVG Filter XML','canvas':'Effect Key'};
-function updateCssLabel(){
-  var mode = document.getElementById('create-effect-mode').value;
-  var lbl = document.getElementById('create-css-label');
-  if(lbl) lbl.textContent = cssLabels[mode] || 'CSS Data';
-}
+initCosmeticPage('create', rarityPriceRanges);
 </script>
+{% endraw %}
 {% endblock %}

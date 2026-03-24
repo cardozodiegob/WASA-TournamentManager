@@ -204,7 +204,22 @@
 {# ============================================================ #}
 {# PROFILE BANNER / HEADER (Task 5.1)                           #}
 {# ============================================================ #}
-<div class="prof-banner {{ effect_classes|join(' ') }}" {% if cos_profile_effect and cos_profile_effect.effect_type == 'glitch' %}data-text="{{ u.name() }}"{% endif %} style="position:relative;background:linear-gradient(135deg,{{ u.profile_color or 'var(--acc)' }}22,{{ u.profile_color or 'var(--acc)' }}08);border:1px solid {{ u.profile_color or 'var(--acc)' }}33;{% if cos_banner and cos_banner.css_data and (not cos_banner.effect_mode or cos_banner.effect_mode == 'css') %}{% if '@keyframes' in cos_banner.css_data %}{{ cos_banner.css_data[:cos_banner.css_data.index('@keyframes')].strip().rstrip(';') }};{% else %}{{ cos_banner.css_data }}{% endif %}{% elif cos_banner and cos_banner.effect_mode == 'svg_filter' %}filter:url(#cosm-svg-{{ cos_banner.id }});{% endif %}{% if cos_border and cos_border.css_data and (not cos_border.effect_mode or cos_border.effect_mode == 'css') %}{% if '@keyframes' in cos_border.css_data %}{{ cos_border.css_data[:cos_border.css_data.index('@keyframes')].strip().rstrip(';') }};{% else %}{{ cos_border.css_data }}{% endif %}{% elif cos_border and cos_border.effect_mode == 'svg_filter' %}filter:url(#cosm-svg-{{ cos_border.id }});{% endif %}{% if cos_profile_effect and cos_profile_effect.css_data and (not cos_profile_effect.effect_mode or cos_profile_effect.effect_mode == 'css') %}{% if '@keyframes' in cos_profile_effect.css_data %}{{ cos_profile_effect.css_data[:cos_profile_effect.css_data.index('@keyframes')].strip().rstrip(';') }};{% else %}{{ cos_profile_effect.css_data }}{% endif %}{% elif cos_profile_effect and cos_profile_effect.effect_mode == 'svg_filter' %}filter:url(#cosm-svg-{{ cos_profile_effect.id }});{% endif %}">
+<div class="prof-banner {{ effect_classes|join(' ') }}" {% if cos_profile_effect and cos_profile_effect.effect_type == 'glitch' %}data-text="{{ u.name() }}"{% endif %} style="position:relative;overflow:hidden;background:linear-gradient(135deg,{{ u.profile_color or 'var(--acc)' }}22,{{ u.profile_color or 'var(--acc)' }}08);border:1px solid {{ u.profile_color or 'var(--acc)' }}33;{% if cos_banner and cos_banner.css_data and (not cos_banner.effect_mode or cos_banner.effect_mode == 'css') %}{% if '@keyframes' in cos_banner.css_data %}{{ cos_banner.css_data[:cos_banner.css_data.index('@keyframes')].strip().rstrip(';') }};{% else %}{{ cos_banner.css_data }}{% endif %}{% endif %}{% if cos_border and cos_border.css_data and (not cos_border.effect_mode or cos_border.effect_mode == 'css') %}{% if '@keyframes' in cos_border.css_data %}{{ cos_border.css_data[:cos_border.css_data.index('@keyframes')].strip().rstrip(';') }};{% else %}{{ cos_border.css_data }}{% endif %}{% endif %}">
+
+{# SVG filter overlays — applied to separate divs so they don't warp all content #}
+{% if cos_banner and cos_banner.effect_mode == 'svg_filter' and cos_banner.css_data %}
+<div style="position:absolute;inset:0;pointer-events:none;z-index:1;border-radius:inherit;filter:url(#cosm-svg-{{ cos_banner.id }});background:inherit"></div>
+{% endif %}
+{% if cos_border and cos_border.effect_mode == 'svg_filter' and cos_border.css_data %}
+<div style="position:absolute;inset:0;pointer-events:none;z-index:1;border-radius:inherit;border:inherit;filter:url(#cosm-svg-{{ cos_border.id }})"></div>
+{% endif %}
+
+{# Profile effect as overlay — keeps it from overriding banner base styles #}
+{% if cos_profile_effect and cos_profile_effect.css_data and (not cos_profile_effect.effect_mode or cos_profile_effect.effect_mode == 'css') %}
+<div style="position:absolute;inset:0;pointer-events:none;z-index:2;border-radius:inherit;{% if '@keyframes' in cos_profile_effect.css_data %}{{ cos_profile_effect.css_data[:cos_profile_effect.css_data.index('@keyframes')].strip().rstrip(';') }};{% else %}{{ cos_profile_effect.css_data }}{% endif %}"></div>
+{% elif cos_profile_effect and cos_profile_effect.effect_mode == 'svg_filter' and cos_profile_effect.css_data %}
+<div style="position:absolute;inset:0;pointer-events:none;z-index:2;border-radius:inherit;filter:url(#cosm-svg-{{ cos_profile_effect.id }})"></div>
+{% endif %}
 
 {# Canvas overlay elements (V16) #}
 {% for item in [cos_border, cos_banner, cos_background, cos_profile_effect] %}
@@ -215,14 +230,14 @@
 
 {# Inner background layer (profile_background cosmetic) #}
 {% if cos_background and cos_background.css_data and (not cos_background.effect_mode or cos_background.effect_mode == 'css') %}
-<div style="{% if '@keyframes' in cos_background.css_data %}{{ cos_background.css_data[:cos_background.css_data.index('@keyframes')].strip().rstrip(';') }};{% else %}{{ cos_background.css_data }}{% endif %}border-radius:12px;padding:1rem;margin:-0.5rem;margin-bottom:0">
+<div style="position:relative;z-index:4;{% if '@keyframes' in cos_background.css_data %}{{ cos_background.css_data[:cos_background.css_data.index('@keyframes')].strip().rstrip(';') }};{% else %}{{ cos_background.css_data }}{% endif %}border-radius:12px;padding:1rem;margin:-0.5rem;margin-bottom:0">
 {% elif cos_background and cos_background.effect_mode == 'svg_filter' and cos_background.css_data %}
-<div style="filter:url(#cosm-svg-{{ cos_background.id }});border-radius:12px;padding:1rem;margin:-0.5rem;margin-bottom:0">
+<div style="position:relative;z-index:4;filter:url(#cosm-svg-{{ cos_background.id }});border-radius:12px;padding:1rem;margin:-0.5rem;margin-bottom:0">
 {% elif cos_background and cos_background.effect_mode == 'canvas' %}
-<div style="border-radius:12px;padding:1rem;margin:-0.5rem;margin-bottom:0">
+<div style="position:relative;z-index:4;border-radius:12px;padding:1rem;margin:-0.5rem;margin-bottom:0">
 {% endif %}
 
-<div class="prof-header">
+<div class="prof-header" style="position:relative;z-index:4">
 <div class="prh" style="margin-bottom:0">
 {# Avatar with avatar_frame #}
 {% if u.avatar %}<img src="{{ url_for('static',filename='uploads/'+u.avatar) }}" class="prof-avatar" style="{% if cos_avatar_frame and cos_avatar_frame.css_data %}{% if '@keyframes' in cos_avatar_frame.css_data %}{{ cos_avatar_frame.css_data[:cos_avatar_frame.css_data.index('@keyframes')].strip().rstrip(';') }};{% else %}{{ cos_avatar_frame.css_data }}{% endif %}{% else %}border-color:{{ u.profile_color or 'var(--acc)' }};{% endif %}">
@@ -587,7 +602,11 @@ snowfall_sparkle:function(cv){
 };
 document.querySelectorAll('.cosm-canvas').forEach(function(c){
   var key=c.dataset.effect;
-  if(CANVAS_EFFECTS[key]){c.width=c.parentElement.offsetWidth;c.height=c.parentElement.offsetHeight;CANVAS_EFFECTS[key](c);}
+  if(CANVAS_EFFECTS[key]){
+    var w=c.parentElement.offsetWidth||c.closest('.prof-banner')?.offsetWidth||600;
+    var h=c.parentElement.offsetHeight||c.closest('.prof-banner')?.offsetHeight||200;
+    c.width=w;c.height=h;CANVAS_EFFECTS[key](c);
+  }
 });
 </script>
 

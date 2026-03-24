@@ -178,6 +178,8 @@ def _auto_migrate():
         ("cosmetic_items", "effect_mode", "VARCHAR(16) NOT NULL DEFAULT 'css'"),
         # V17 additions
         ("users", "chat_muted_until", "DATETIME"),
+        # V19 additions
+        ("cosmetic_items", "legacy", "BOOLEAN NOT NULL DEFAULT 0"),
     ]
     for table, col, coltype in migrations:
         try:
